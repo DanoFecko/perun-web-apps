@@ -13,7 +13,8 @@ export class AttributesService {
 
   constructor(
     @Inject(PERUN_API_SERVICE) private apiService: PerunApiService
-  ) {}
+  ) {
+  }
 
   getAttribute(entityId: number, entity: AttrEntity, urn: string, showNotificationOnError = true): Observable<Attribute> {
     return this.apiService.get(`json/attributesManager/getAttribute?${entity}=${entityId}&attributeName=${urn}`,
@@ -90,6 +91,44 @@ export class AttributesService {
     payload['rights'] = rights;
 
     return this.apiService.post('json/attributesManager/setAttributeRights', payload, showNotificationOnError);
+  }
+
+
+  getAttributeRights(attId: number, showNotificationOnError = true): Observable<AttributeRights[]> {
+    return this.apiService.get(`json/attributesManager/getAttributeRights?attributeId=${attId}`, new HttpParams(), showNotificationOnError);
+  }
+
+  updateAttributeDefinition(attDef: AttributeDefinition, showNotificationOnError = true): Observable<AttributeDefinition> {
+    const payload = {};
+    payload['attributeDefinition'] = attDef;
+
+    return this.apiService.post('json/attributesManager/updateAttributeDefinition', payload, showNotificationOnError);
+  }
+
+  getEntitylessAttributes(attName: string, showNotificationOnError = true): Observable<Attribute[]> {
+    return this.apiService.get(`json/attributesManager/getEntitylessAttributes?attrName=${attName}`,
+      new HttpParams(), showNotificationOnError);
+  }
+
+  getEntitylessKeys(attDefId: number, showNotificationOnError = true): Observable<string[]> {
+    return this.apiService.get(`json/attributesManager/getEntitylessKeys?attributeDefinition=${attDefId}`,
+      new HttpParams(), showNotificationOnError);
+  }
+
+  setEntitylessAttribute(key: string, att: Attribute, showNotificationOnError = true): Observable<void> {
+    const payload = {};
+    payload['key'] = key;
+    payload['attribute'] = att;
+
+    return this.apiService.post('json/attributesManager/setAttribute', payload, showNotificationOnError)
+  }
+
+  removeEntitylessAttribute(key: string, attId: number, showNotificationOnError = true): Observable<void> {
+    const payload = {};
+    payload['key'] = key;
+    payload['attribute'] = attId;
+
+    return this.apiService.post('json/attributesManager/removeAttribute', payload, showNotificationOnError)
   }
 }
 

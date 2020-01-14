@@ -25,6 +25,8 @@ import {CreateAttributeDefinitionDialogComponent} from '../shared/components/dia
 import {DeleteAttributeDefinitionDialogComponent} from '../shared/components/dialogs/delete-attribute-definition-dialog/delete-attribute-definition-dialog.component';
 import { MatTableExporterModule } from 'mat-table-exporter';
 import { UiAlertsModule } from '@perun-web-apps/ui/alerts';
+import { EditAttributeDefinitionDialogComponent } from '../shared/components/dialogs/edit-attribute-definition-dialog/edit-attribute-definition-dialog.component';
+import { EntitylessAttributeKeysListComponent } from '../shared/components/entityless-attribute-keys-list/entityless-attribute-keys-list.component';
 
 @NgModule({
   declarations: [
@@ -49,7 +51,9 @@ import { UiAlertsModule } from '@perun-web-apps/ui/alerts';
   ],
   entryComponents: [
     CreateAttributeDefinitionDialogComponent,
-    DeleteAttributeDefinitionDialogComponent
+    DeleteAttributeDefinitionDialogComponent,
+    EditAttributeDefinitionDialogComponent,
+    EntitylessAttributeKeysListComponent
   ]
 })
 export class AdminModule { }

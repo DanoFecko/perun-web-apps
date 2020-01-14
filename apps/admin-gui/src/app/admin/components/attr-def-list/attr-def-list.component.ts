@@ -1,7 +1,17 @@
-import {AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild} from '@angular/core';
-import {MatPaginator, MatSort, MatTableDataSource} from '@angular/material';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
+import { MatDialog, MatPaginator, MatSort, MatTableDataSource } from '@angular/material';
 import {SelectionModel} from '@angular/cdk/collections';
 import { AttributeDefinition } from '@perun-web-apps/perun/models';
+import { EditAttributeDefinitionDialogComponent } from '../../../shared/components/dialogs/edit-attribute-definition-dialog/edit-attribute-definition-dialog.component';
 
 @Component({
   selector: 'app-attr-def-list',
@@ -10,7 +20,7 @@ import { AttributeDefinition } from '@perun-web-apps/perun/models';
 })
 export class AttrDefListComponent implements OnChanges, AfterViewInit {
 
-  constructor() { }
+  constructor(private dialog: MatDialog) { }
 
   @Input()
   definitions: AttributeDefinition[];
@@ -20,6 +30,9 @@ export class AttrDefListComponent implements OnChanges, AfterViewInit {
   hideColumns: string[] = [];
   @Input()
   filterValue: string;
+
+  @Output()
+  refreshEvent = new EventEmitter<void>();
 
   exporting = false;
 
@@ -81,5 +94,21 @@ export class AttrDefListComponent implements OnChanges, AfterViewInit {
       return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
     }
     return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.id + 1}`;
+  }
+
+  onRowClick(attDef: AttributeDefinition) {
+    const dialogRef = this.dialog.open(EditAttributeDefinitionDialogComponent, {
+      width: '700px',
+      data: {
+        attDef: attDef
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.selection.clear();
+        this.refreshEvent.emit();
+      }
+    });
   }
 }

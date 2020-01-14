@@ -20,8 +20,9 @@
   <br>
   <mat-form-field class="form-field-width">
     <label>
-      <input class="form-field-width" matInput [(ngModel)]="attDef.description"
-             placeholder="{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.DESCRIPTION' | translate}}" required>
+      <textarea class="form-field-width" matInput cdkTextareaAutosize [(ngModel)]="attDef.description"
+                placeholder="{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.DESCRIPTION' | translate}}"
+                required> </textarea>
     </label>
     <mat-error
       *ngIf="attDef.description === ''">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.ERROR_FIELD_EMPTY' | translate}}</mat-error>
@@ -67,44 +68,56 @@
     </mat-slide-toggle>
   </div>
 
-  <div class="d-flex flex-row justify-content-between mt-2">
-    <p class="ml-5 pl-4">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.SELF' | translate}}</p>
+  <div class="d-flex flex-row mt-2">
+    <p class="ml-5 pl-4">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.READ' | translate}}</p>
+    <p class="ml-4">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.WRITE' | translate}}</p>
+  </div>
+
+  <div class="d-flex flex-row">
+    <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.SELF' | translate}}</p>
+    <mat-checkbox class="ml-5 pl-3" [(ngModel)]="readSelf">
+    </mat-checkbox>
+    <mat-checkbox class="ml-5" [(ngModel)]="writeSelf">
+    </mat-checkbox>
+  </div>
+
+  <div class="d-flex flex-row">
     <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.SELF_PUBLIC' | translate}}</p>
+    <mat-checkbox class="ml-3" [(ngModel)]="readSelfPublic">
+    </mat-checkbox>
+    <mat-checkbox class="ml-5" [(ngModel)]="writeSelfPublic">
+    </mat-checkbox>
+  </div>
+
+  <div class="d-flex flex-row">
     <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.SELF_VO' | translate}}</p>
+    <mat-checkbox class="ml-4 pl-3" [(ngModel)]="readSelfVo">
+    </mat-checkbox>
+    <mat-checkbox class="ml-5" [(ngModel)]="writeSelfVo">
+    </mat-checkbox>
+  </div>
+
+  <div class="d-flex flex-row">
     <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.VO' | translate}}</p>
+    <mat-checkbox class="ml-5 pl-4  " [(ngModel)]="readVo">
+    </mat-checkbox>
+    <mat-checkbox class="ml-5" [(ngModel)]="writeVo">
+    </mat-checkbox>
+  </div>
+
+  <div class="d-flex flex-row">
     <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.GROUP' | translate}}</p>
+    <mat-checkbox class="ml-4 pl-4" [(ngModel)]="readGroup">
+    </mat-checkbox>
+    <mat-checkbox class="ml-5" [(ngModel)]="writeGroup">
+    </mat-checkbox>
+  </div>
+
+  <div class="d-flex flex-row">
     <p class="">{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.FACILITY' | translate}}</p>
-  </div>
-
-  <div class="d-flex flex-row justify-content-between">
-    <p>{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.READ' | translate}}</p>
-    <mat-checkbox [(ngModel)]="readSelf">
+    <mat-checkbox class="ml-4 pl-3" [(ngModel)]="readFacility">
     </mat-checkbox>
-    <mat-checkbox [(ngModel)]="readSelfPublic">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="readSelfVo">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="readVo">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="readGroup">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="readFacility">
-    </mat-checkbox>
-  </div>
-
-  <div class="d-flex flex-row justify-content-between">
-    <p>{{'DIALOGS.CREATE_ATTRIBUTE_DEFINITION.WRITE' | translate}}</p>
-    <mat-checkbox [(ngModel)]="writeSelf">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="writeSelfPublic">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="writeSelfVo">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="writeVo">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="writeGroup">
-    </mat-checkbox>
-    <mat-checkbox [(ngModel)]="writeFacility">
+    <mat-checkbox class="ml-5" [(ngModel)]="writeFacility">
     </mat-checkbox>
   </div>
 

@@ -9,3 +9,7 @@
 .pointer {
   cursor: pointer;
 }
+
+textarea[cdktextareaautosize].mat-input-element {
+  overflow: hidden;
+}

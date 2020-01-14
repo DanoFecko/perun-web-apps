@@ -15,6 +15,7 @@
     *ngIf="!loading"
     [definitions]="attrDefinitions"
     [selection]="selected"
-    [filterValue]="filterValue">
+    [filterValue]="filterValue"
+    (refreshEvent)="refreshTable()">
   </app-attr-def-list>
 </div>

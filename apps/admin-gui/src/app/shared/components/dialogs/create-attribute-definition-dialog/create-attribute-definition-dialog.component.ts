@@ -80,43 +80,77 @@ export class CreateAttributeDefinitionDialogComponent implements OnInit {
   readRights(): AttributeRights[] {
     const list: AttributeRights[] = [];
 
+    const rightsSELF = {} as AttributeRights;
+    rightsSELF.attributeId = this.attDef.id;
+    rightsSELF.role = Role.SELF;
+    rightsSELF.rights = [];
+
     if (this.readSelf) {
-      list.push(this.generateRights(Role.SELF, ActionType.READ));
+      rightsSELF.rights.push(ActionType.READ);
     }
     if (this.readSelfPublic) {
-      list.push(this.generateRights(Role.SELF, ActionType.READ_PUBLIC));
+      rightsSELF.rights.push(ActionType.READ_PUBLIC);
     }
     if (this.readSelfVo) {
-      list.push(this.generateRights(Role.SELF, ActionType.READ_VO));
-    }
-    if (this.readVo) {
-      list.push(this.generateRights(Role.VOADMIN, ActionType.READ));
-    }
-    if (this.readGroup) {
-      list.push(this.generateRights(Role.GROUPADMIN, ActionType.READ));
-    }
-    if (this.readFacility) {
-      list.push(this.generateRights(Role.FACILITYADMIN, ActionType.READ));
+      rightsSELF.rights.push(ActionType.READ_VO);
     }
 
     if (this.writeSelf) {
-      list.push(this.generateRights(Role.SELF, ActionType.WRITE));
+      rightsSELF.rights.push(ActionType.WRITE);
     }
     if (this.writeSelfPublic) {
-      list.push(this.generateRights(Role.SELF, ActionType.WRITE_PUBLIC));
+      rightsSELF.rights.push(ActionType.WRITE_PUBLIC);
     }
     if (this.writeSelfVo) {
-      list.push(this.generateRights(Role.SELF, ActionType.WRITE_VO));
+      rightsSELF.rights.push(ActionType.WRITE_VO);
     }
+
+    list.push(rightsSELF);
+
+    const rightsVO = {} as AttributeRights;
+    rightsVO.attributeId = this.attDef.id;
+    rightsVO.role = Role.VOADMIN;
+    rightsVO.rights = [];
+
+    if (this.readVo) {
+      rightsVO.rights.push(ActionType.READ);
+    }
+
     if (this.writeVo) {
-      list.push(this.generateRights(Role.VOADMIN, ActionType.WRITE));
+      rightsVO.rights.push(ActionType.WRITE);
     }
+
+    list.push(rightsVO);
+
+    const rightsGROUP = {} as AttributeRights;
+    rightsGROUP.attributeId = this.attDef.id;
+    rightsGROUP.role = Role.GROUPADMIN;
+    rightsGROUP.rights = [];
+
+    if (this.readGroup) {
+      rightsGROUP.rights.push(ActionType.READ);
+    }
+
     if (this.writeGroup) {
-      list.push(this.generateRights(Role.GROUPADMIN, ActionType.WRITE));
+      rightsGROUP.rights.push(ActionType.WRITE);
     }
+
+    list.push(rightsGROUP);
+
+    const rightsFACILITY = {} as AttributeRights;
+    rightsFACILITY.attributeId = this.attDef.id;
+    rightsFACILITY.role = Role.FACILITYADMIN;
+    rightsFACILITY.rights = [];
+
+    if (this.readFacility) {
+      rightsFACILITY.rights.push(ActionType.READ);
+    }
+
     if (this.writeFacility) {
-      list.push(this.generateRights(Role.FACILITYADMIN, ActionType.WRITE));
+      rightsFACILITY.rights.push(ActionType.WRITE);
     }
+
+    list.push(rightsFACILITY);
 
     return list;
   }
@@ -167,13 +201,4 @@ export class CreateAttributeDefinitionDialogComponent implements OnInit {
       return false;
     }
   }
-
-  private generateRights(role: Role, right: ActionType): AttributeRights {
-    const rights = {} as AttributeRights;
-    rights.attributeId = this.attDef.id;
-    rights.role = role;
-    rights.rights = [right];
-    return rights;
-  }
-
 }

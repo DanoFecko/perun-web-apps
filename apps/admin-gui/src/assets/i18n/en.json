@@ -1020,6 +1020,27 @@
       "CANCEL": "Cancel",
       "ADD": "Add",
       "SUCCESS_ADDED": "External source successfully added: "
+    },
+    "EDIT_ATTRIBUTE_DEFINITION": {
+      "SUCCESS": "Attribute definition successfully edited",
+      "DISPLAY_NAME": "Display name",
+      "ERROR_FIELD_EMPTY": "This field can't be empty",
+      "DESCRIPTION": "Description",
+      "UNIQUE": "Unique",
+      "TOOLTIP_UNIQUE": "Entityless Attributes or Attributes with definitions 'virt' CAN'T be UNIQUE",
+      "READ": "Read",
+      "WRITE": "Write",
+      "SELF": "Self",
+      "SELF_PUBLIC": "Self Public",
+      "SELF_VO": "Self Vo",
+      "VO": "Vo",
+      "GROUP": "Group",
+      "FACILITY": "Facility",
+      "CANCEL": "Cancel",
+      "CONFIRM": "Submit",
+      "TOOLTIP_CONFIRM": "Fill every required field",
+      "SHOW_KEYS": "Show keys",
+      "SERVICES": "Dependent services:"
     }
   },
   "MEMBERS_LIST": {
@@ -1068,7 +1089,7 @@
       "TABLE_ATTR_UNIQUE": "Unique",
       "CREATE": "New attribute definition...",
       "DELETE": "Delete",
-      "SEARCH": "Search",
+      "SEARCH": "Filter by ID, name, entity, definition, or type",
       "NO_ATTRIBUTES": "There are no attributes available."
     },
     "USERS": {
@@ -1203,6 +1224,25 @@
         "TYPE": "Type",
         "NO_EXT_SOURCES": "No external sources",
         "NO_FILTER_RESULTS": "There are no external sources matching your query"
+      },
+      "SERVICES_LIST": {
+        "ID": "Id",
+        "NAME": "Name",
+        "ENABLED":"Enabled",
+        "SCRIPT": "Script",
+        "DESCRIPTION": "Description",
+        "NO_SERVICES_WARNING": "No services assigned."
+      },
+      "ENTITYLESS_ATTRIBUTES_LIST": {
+        "CANCEL": "Back",
+        "SAVE": "Save",
+        "ADD": "Add",
+        "REMOVE": "Remove",
+        "KEY": "Key",
+        "VALUE": "Value",
+        "NO_KEYS_WARNING": "Use 'Add' button to add new Key-Attribute pair",
+        "SAVE_SUCCESS": "Attributes successfully saved",
+        "REMOVE_SUCCESS": "Attributes successfully removed"
       }
     },
     "FOOTER": {

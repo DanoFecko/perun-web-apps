@@ -152,6 +152,9 @@ import { AutoFocusDirective } from './directives/auto-focus.directive';
 import { TableOptionsComponent } from './components/table-options/table-options.component';
 import {MatTableExporterModule} from 'mat-table-exporter';
 import { UiAlertsModule } from '@perun-web-apps/ui/alerts';
+import { EditAttributeDefinitionDialogComponent } from './components/dialogs/edit-attribute-definition-dialog/edit-attribute-definition-dialog.component';
+import { EntitylessAttributeKeysListComponent } from './components/entityless-attribute-keys-list/entityless-attribute-keys-list.component';
+import { ServicesListComponent } from './components/services-list/services-list.component';
 import { ReportIssueDialogComponent } from './components/report-issue-dialog/report-issue-dialog.component';
 import { RemoveVoDialogComponent } from './components/dialogs/remove-vo-dialog/remove-vo-dialog.component';
 import { CreateVoDialogComponent } from './components/dialogs/create-vo-dialog/create-vo-dialog.component';
@@ -460,6 +463,10 @@ import { ExtSourceTypePipe } from './pipes/ext-source-type.pipe';
     CreateAttributeDefinitionDialogComponent,
     PerunFooterComponent,
     BugReportDialogComponent,
+    AutoFocusDirective,
+    EditAttributeDefinitionDialogComponent,
+    EntitylessAttributeKeysListComponent,
+    ServicesListComponent,
     AutoFocusDirective,
     ReportIssueDialogComponent,
     RemoveVoDialogComponent,

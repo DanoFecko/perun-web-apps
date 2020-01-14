@@ -49,7 +49,7 @@
       <tr
         mat-row
         *matRowDef="let attrDef; columns: displayedColumns;"
-        >
+        (click)="onRowClick(attrDef)">
 <!--        class="dark-hover-list-item">-->
       </tr>
     </table>
