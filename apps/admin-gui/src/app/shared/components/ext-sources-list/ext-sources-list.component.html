@@ -47,7 +47,7 @@
         class="dark-hover-list-item">
       </tr>
     </table>
-    <mat-paginator [length]="this.extSources.length" [pageSize]="5"
+    <mat-paginator [length]="this.extSources.length" [pageSize]="pageSize"
                    [pageSizeOptions]="[5,10,25]"></mat-paginator>
   </div>
 </div>
@@ -58,6 +58,6 @@
   {{'SHARED.COMPONENTS.EXT_SOURCES_LIST.NO_EXT_SOURCES' | translate}}
 </app-alert>
 
-<!--<app-alert *ngIf="dataSource.filteredData.length === 0 && extSources.length !== 0" color="warn">-->
-<!--  {{'SHARED.COMPONENTS.EXT_SOURCES_LIST.NO_FILTER_RESULTS' | translate}}-->
-<!--</app-alert>-->
+<app-alert *ngIf="dataSource.filteredData.length === 0 && extSources.length !== 0" color="warn">
+  {{'SHARED.COMPONENTS.EXT_SOURCES_LIST.NO_FILTER_RESULTS' | translate}}
+</app-alert>

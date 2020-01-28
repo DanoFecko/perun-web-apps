@@ -25,6 +25,7 @@ import {UserSettingsAttributesComponent} from '../shared/components/user-detail-
 import {
   UserSettingsOverviewComponent
 } from '../shared/components/user-detail-page/user-settings/user-settings-overview/user-settings-overview.component';
+import { AdminExtSourcesComponent } from './pages/admin-page/admin-ext-sources/admin-ext-sources.component';
 
 const routes: Routes = [
   {
@@ -71,6 +72,11 @@ const routes: Routes = [
             data: {animation: 'UserDestinationGraphPage'}
           }
         ]
+      },
+      {
+        path: 'ext_sources',
+        component: AdminExtSourcesComponent,
+        data: {animation: 'AdminExtSourcesPage'}
       }
     ]
   },

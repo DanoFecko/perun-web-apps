@@ -30,6 +30,12 @@ export class AdminOverviewComponent implements OnInit {
       url: '/admin/visualizer',
       label: 'MENU_ITEMS.ADMIN.VISUALIZER',
       style: 'admin-btn'
+    },
+    {
+      cssIcon: 'perun-external-sources',
+      url: '/admin/ext_sources',
+      label: 'MENU_ITEMS.ADMIN.EXT_SOURCES',
+      style: 'admin-btn'
     }
   ];
 

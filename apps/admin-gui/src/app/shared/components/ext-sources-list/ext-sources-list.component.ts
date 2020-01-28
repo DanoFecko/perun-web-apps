@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { ExtSource } from '@perun-web-apps/perun/models';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatPaginator, MatSort, MatTableDataSource } from '@angular/material';
@@ -8,7 +8,7 @@ import { MatPaginator, MatSort, MatTableDataSource } from '@angular/material';
   templateUrl: './ext-sources-list.component.html',
   styleUrls: ['./ext-sources-list.component.scss']
 })
-export class ExtSourcesListComponent implements OnChanges {
+export class ExtSourcesListComponent implements AfterViewInit, OnChanges {
 
   constructor() {
   }
@@ -16,9 +16,13 @@ export class ExtSourcesListComponent implements OnChanges {
   @Input()
   extSources: ExtSource[];
   @Input()
-  selection: SelectionModel<ExtSource>;
+  selection: SelectionModel<ExtSource> = new SelectionModel<ExtSource>();
   @Input()
   filterValue = '';
+  @Input()
+  hideColumns: string[] = [];
+  @Input()
+  pageSize = 5;
 
   @ViewChild(MatPaginator, { static: false })
   paginator: MatPaginator;
@@ -34,7 +38,12 @@ export class ExtSourcesListComponent implements OnChanges {
   dataSource: MatTableDataSource<ExtSource>;
   exporting = false;
 
+  ngAfterViewInit() {
+    this.setDataSource();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
+    this.displayedColumns = this.displayedColumns.filter(x => !this.hideColumns.includes(x));
     this.dataSource = new MatTableDataSource<ExtSource>(this.extSources);
     this.setDataSource();
   }

@@ -1,0 +1,20 @@
+<div>
+  <h1 class="page-subtitle">{{'ADMIN.EXT_SOURCES.TITLE' | translate}}</h1>
+
+  <button mat-stroked-button (click)="onLoad()" class="mr-2">
+    {{'ADMIN.EXT_SOURCES.LOAD' | translate}}
+  </button>
+
+  <app-immediate-filter
+    [placeholder]="'ADMIN.EXT_SOURCES.SEARCH'"
+    (filter)="applyFilter($event)"></app-immediate-filter>
+  <mat-spinner class="ml-auto mr-auto" *ngIf="loading"></mat-spinner>
+
+  <app-ext-sources-list
+    *ngIf="!loading"
+    [extSources]="extSources"
+    [filterValue]="filterValue"
+    [hideColumns]="['select']"
+    [pageSize]="10">
+  </app-ext-sources-list>
+</div>

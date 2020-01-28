@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { VoService } from '@perun-web-apps/perun/services';
+import { ExtSourceService } from '@perun-web-apps/perun/services';
 import { ActivatedRoute } from '@angular/router';
 import { ExtSource } from '@perun-web-apps/perun/models';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -15,7 +15,7 @@ import { TranslateService } from '@ngx-translate/core';
 })
 export class VoSettingsExtsourcesComponent implements OnInit {
 
-  constructor(private voService: VoService,
+  constructor(private extSourceService: ExtSourceService,
               private route: ActivatedRoute,
               private dialog: MatDialog,
               private notificator: NotificatorService,
@@ -39,7 +39,7 @@ export class VoSettingsExtsourcesComponent implements OnInit {
 
   refreshTable() {
     this.loading = true;
-    this.voService.getVoExtSources(this.voId).subscribe(sources => {
+    this.extSourceService.getVoExtSources(this.voId).subscribe(sources => {
       this.extSources = sources;
       this.selection.clear();
       this.loading = false;
@@ -68,7 +68,7 @@ export class VoSettingsExtsourcesComponent implements OnInit {
 
   onRemove() {
     for (const extSource of this.selection.selected) {
-      this.voService.removeExtSources(this.voId, extSource.id).subscribe(_ => {
+      this.extSourceService.removeExtSources(this.voId, extSource.id).subscribe(_ => {
         this.notificator.showSuccess(this.successMessage + extSource.name);
         this.refreshTable();
       });

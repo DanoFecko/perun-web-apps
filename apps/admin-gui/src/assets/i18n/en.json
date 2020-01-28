@@ -512,7 +512,8 @@
       "OVERVIEW": "Overview",
       "ATTRIBUTES": "Attributes",
       "VISUALIZER": "Visualizer",
-      "USERS": "Users"
+      "USERS": "Users",
+      "EXT_SOURCES": "External sources"
     },
     "VISUALIZER": {
       "ATTR_DEPENDENCIES": "Modules dependencies",
@@ -1134,6 +1135,12 @@
         "SERVICE": "Service",
         "DESTINATION": "Destination"
       }
+    },
+    "EXT_SOURCES": {
+      "TITLE": "External sources",
+      "LOAD": "Load External sources",
+      "SEARCH": "Search by ID, Name or Type",
+      "LOAD_SUCCESS": "External sources successfully loaded"
     }
   },
   "USER_DETAIL": {

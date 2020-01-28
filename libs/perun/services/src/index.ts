@@ -11,3 +11,4 @@ export { RtMessagesService } from './lib/rt-messages.service';
 export { ServiceService } from './lib/service.service';
 export { UsersService } from './lib/users.service';
 export { VoService } from './lib/vo.service';
+export { ExtSourceService } from './lib/ext-source.service';

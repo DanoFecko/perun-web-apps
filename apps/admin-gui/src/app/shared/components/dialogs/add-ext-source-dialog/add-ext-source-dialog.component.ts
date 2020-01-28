@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material';
-import { VoService } from '@perun-web-apps/perun/services';
+import { ExtSourceService } from '@perun-web-apps/perun/services';
 import { ExtSource } from '@perun-web-apps/perun/models';
 import { SelectionModel } from '@angular/cdk/collections';
 import { NotificatorService } from '../../../../core/services/common/notificator.service';
@@ -21,7 +21,7 @@ export class AddExtSourceDialogComponent implements OnInit {
 
   constructor(private dialogRef: MatDialogRef<AddExtSourceDialogComponent>,
               @Inject(MAT_DIALOG_DATA) private data: AddExtSourceDialogData,
-              private voService: VoService,
+              private extSourceService: ExtSourceService,
               private notificator: NotificatorService,
               private translate: TranslateService) {
     this.translate.get('DIALOGS.ADD_EXT_SOURCES.SUCCESS_ADDED').subscribe(result => this.successMessage = result);
@@ -37,7 +37,7 @@ export class AddExtSourceDialogComponent implements OnInit {
 
   ngOnInit() {
     this.theme = this.data.theme;
-    this.voService.getExtSources().subscribe(sources => {
+    this.extSourceService.getExtSources().subscribe(sources => {
       this.extSources = sources.filter(source => !this.data.voExtSources.includes(source));
     });
   }
@@ -48,7 +48,7 @@ export class AddExtSourceDialogComponent implements OnInit {
 
   onAdd() {
     for (const source of this.selection.selected) {
-      this.voService.addExtSources(this.data.voId, source.id).subscribe(_ => {
+      this.extSourceService.addExtSources(this.data.voId, source.id).subscribe(_ => {
         this.notificator.showSuccess(this.successMessage + source.name);
         this.dialogRef.close(true);
       });

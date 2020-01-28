@@ -159,6 +159,11 @@ export class SideMenuItemService {
             }
           ],
           showChildrenRegex: '/admin/visualizer'
+        },
+        {
+          label: 'MENU_ITEMS.ADMIN.EXT_SOURCES',
+          url: ['/admin/ext_sources'],
+          activatedRegex: '^/admin/ext_sources$'
         }
       ]
     };
