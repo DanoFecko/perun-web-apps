@@ -13,6 +13,7 @@ import {
 } from '../../../../../shared/components/dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
 import { filterCoreAttributes } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
+import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 
 @Component({
   selector: 'app-group-settings-attributes',
@@ -75,12 +76,20 @@ export class GroupSettingsAttributesComponent implements OnInit {
   onSave() {
     // have to use this to update attribute with map in it, before saving it
     this.list.updateMapAttributes();
-    this.attributesManager.setGroupAttributes({group: this.groupId, attributes: this.selection.selected}).subscribe(() => {
-      this.attributesManager.getGroupAttributes(this.groupId).subscribe(attributes => {
-        this.attributes = filterCoreAttributes(attributes);
-        this.notificator.showSuccess(this.saveSuccessMessage);
-        this.selection.clear();
-      });
+
+    const dialogRef = this.dialog.open(EditAttributeDialogComponent, {
+      width: '450px',
+      data: {
+        entityId: this.groupId,
+        entity: 'group',
+        attributes: this.selection.selected
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.refreshTable();
+      }
     });
   }
 

@@ -10,6 +10,7 @@ import { filterCoreAttributes } from '@perun-web-apps/perun/utils';
 import { DeleteAttributeDialogComponent } from '../../../dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
 import { StoreService } from '@perun-web-apps/perun/services';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
+import { EditAttributeDialogComponent } from '../../../dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 
 @Component({
   selector: 'app-user-settings-attributes',
@@ -76,12 +77,20 @@ export class UserSettingsAttributesComponent implements OnInit {
   onSave() {
     // have to use this to update attribute with map in it, before saving it
     this.list.updateMapAttributes();
-    this.attributesManager.setUserAttributes({user: this.userId, attributes: this.selection.selected}).subscribe(() => {
-      this.attributesManager.getUserAttributes(this.userId).subscribe(attributes => {
-        this.attributes = filterCoreAttributes(attributes);
-        this.notificator.showSuccess(this.saveSuccessMessage);
-        this.selection.clear();
-      });
+
+    const dialogRef = this.dialog.open(EditAttributeDialogComponent, {
+      width: '450px',
+      data: {
+        entityId: this.userId,
+        entity: 'user',
+        attributes: this.selection.selected
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.refreshTable();
+      }
     });
   }
 

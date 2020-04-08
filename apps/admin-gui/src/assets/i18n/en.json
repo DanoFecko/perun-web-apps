@@ -738,6 +738,14 @@
         "APP_ERROR_VO_ADMIN": "Error / manager"
       }
     },
+    "EDIT_ATTRIBUTES": {
+      "TITLE": "Confirm edit action",
+      "DESCRIPTION": "Following attributes will be edited.",
+      "ASK": "Do you want to proceed?",
+      "CANCEL": "Cancel",
+      "SAVE": "Save",
+      "SUCCESS": "Selected attributes were edited"
+    },
     "REJECT_APPLICATION": {
       "TITLE": "Specify reason",
       "TEXT": "Please specify reason of rejection to let user know why was application rejected.",

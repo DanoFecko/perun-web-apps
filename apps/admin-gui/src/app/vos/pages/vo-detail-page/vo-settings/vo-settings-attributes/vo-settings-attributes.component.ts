@@ -13,6 +13,7 @@ import {NotificatorService} from '../../../../../core/services/common/notificato
 import {TranslateService} from '@ngx-translate/core';
 import { filterCoreAttributes } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
+import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 
 @Component({
   selector: 'app-vo-settings-attributes',
@@ -89,12 +90,20 @@ export class VoSettingsAttributesComponent implements OnInit {
   onSave() {
     // have to use this to update attribute with map in it, before saving it
     this.list.updateMapAttributes();
-    this.attributesManager.setVoAttributes({vo: this.voId, attributes: this.selection.selected}).subscribe( () => {
-      this.attributesManager.getVoAttributes(this.voId).subscribe(attributes => {
-        this.attributes = filterCoreAttributes(attributes);
-        this.notificator.showSuccess(this.saveSuccessMessage);
-        this.selection.clear();
-      });
+
+    const dialogRef = this.dialog.open(EditAttributeDialogComponent, {
+      width: '450px',
+      data: {
+        entityId: this.voId,
+        entity: 'vo',
+        attributes: this.selection.selected
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.refreshTable();
+      }
     });
   }
 

@@ -150,6 +150,7 @@ import { ExtSourceTypePipe } from './pipes/ext-source-type.pipe';
 // @ts-ignore
 import { PerunSharedComponentsModule } from '@perun-web-apps/perun/components';
 import { UserRolesComponent } from './components/user-detail-page/user-settings/user-roles/user-roles.component';
+import { EditAttributeDialogComponent } from './components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 
 @NgModule({
   imports: [
@@ -377,7 +378,8 @@ import { UserRolesComponent } from './components/user-detail-page/user-settings/
     ExtSourcesListComponent,
     AddExtSourceDialogComponent,
     ExtSourceTypePipe,
-    UserRolesComponent
+    UserRolesComponent,
+    EditAttributeDialogComponent
   ],
   providers: [
     AnyToStringPipe,

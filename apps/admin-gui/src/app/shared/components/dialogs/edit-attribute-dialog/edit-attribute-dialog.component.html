@@ -1,0 +1,36 @@
+<h1 mat-dialog-title>{{'DIALOGS.EDIT_ATTRIBUTES.TITLE' | translate}}</h1>
+<div mat-dialog-content>
+  <div>
+    {{'DIALOGS.EDIT_ATTRIBUTES.DESCRIPTION' | translate}}
+  </div>
+
+  <div class="font-weight-bold">
+    {{'DIALOGS.EDIT_ATTRIBUTES.ASK' | translate}}
+  </div>
+
+  <table mat-table [dataSource]="dataSource" class="w-100">
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let attribute"> {{attribute.displayName}} </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns" class="font-weight-bolder"></tr>
+    <tr mat-row *matRowDef="let group; columns: displayedColumns;"></tr>
+  </table>
+
+</div>
+<div mat-dialog-actions>
+  <button
+    mat-flat-button
+    class="ml-auto"
+    (click)="onCancel()">
+    {{'DIALOGS.EDIT_ATTRIBUTES.CANCEL' | translate}}
+  </button>
+  <button
+    mat-flat-button
+    class="ml-2"
+    color="accent"
+    (click)="onSubmit()">
+    {{'DIALOGS.EDIT_ATTRIBUTES.SAVE' | translate}}
+  </button>
+</div>
