@@ -85,6 +85,13 @@
     },
     "perun-directives": {
       "tags": []
+    },
+    "deschizofrenizator": {
+      "tags": []
+    },
+    "deschizofrenizator-e2e": {
+      "tags": [],
+      "implicitDependencies": ["deschizofrenizator"]
     }
   },
   "tasksRunnerOptions": {

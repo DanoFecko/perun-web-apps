@@ -1097,6 +1097,129 @@
           "style": "scss"
         }
       }
+    },
+    "deschizofrenizator": {
+      "projectType": "application",
+      "schematics": {
+        "@nrwl/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "apps/deschizofrenizator",
+      "sourceRoot": "apps/deschizofrenizator/src",
+      "prefix": "perun-web-apps",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/apps/deschizofrenizator",
+            "index": "apps/deschizofrenizator/src/index.html",
+            "main": "apps/deschizofrenizator/src/main.ts",
+            "polyfills": "apps/deschizofrenizator/src/polyfills.ts",
+            "tsConfig": "apps/deschizofrenizator/tsconfig.app.json",
+            "aot": true,
+            "assets": [
+              "apps/deschizofrenizator/src/favicon.ico",
+              "apps/deschizofrenizator/src/assets"
+            ],
+            "styles": ["apps/deschizofrenizator/src/styles.scss"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "apps/deschizofrenizator/src/environments/environment.ts",
+                  "with": "apps/deschizofrenizator/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractCss": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "deschizofrenizator:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "deschizofrenizator:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "deschizofrenizator:build"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "apps/deschizofrenizator/tsconfig.app.json",
+              "apps/deschizofrenizator/tsconfig.spec.json"
+            ],
+            "exclude": ["**/node_modules/**", "!apps/deschizofrenizator/**"]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "options": {
+            "jestConfig": "apps/deschizofrenizator/jest.config.js",
+            "tsConfig": "apps/deschizofrenizator/tsconfig.spec.json",
+            "passWithNoTests": true,
+            "setupFile": "apps/deschizofrenizator/src/test-setup.ts"
+          }
+        }
+      }
+    },
+    "deschizofrenizator-e2e": {
+      "root": "apps/deschizofrenizator-e2e",
+      "sourceRoot": "apps/deschizofrenizator-e2e/src",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@nrwl/cypress:cypress",
+          "options": {
+            "cypressConfig": "apps/deschizofrenizator-e2e/cypress.json",
+            "tsConfig": "apps/deschizofrenizator-e2e/tsconfig.e2e.json",
+            "devServerTarget": "deschizofrenizator:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "deschizofrenizator:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": ["apps/deschizofrenizator-e2e/tsconfig.e2e.json"],
+            "exclude": ["**/node_modules/**", "!apps/deschizofrenizator-e2e/**"]
+          }
+        }
+      }
     }
   },
   "cli": {
