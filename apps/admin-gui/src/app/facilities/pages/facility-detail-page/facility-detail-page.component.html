@@ -3,9 +3,7 @@
   </perun-web-apps-back-button>
   <h1 class="page-title">
     {{'FACILITY_DETAIL.TITLE' | translate}}
-    <a class="facility-link" [routerLink]="['/facilities', facility.id]">
-      {{facility.name}}
-    </a>
+    <a class="facility-link" [routerLink]="['/facilities', facility.id]">{{facility.name}}</a>
     <span class="text-muted">
       &nbsp;#{{facility.id}}
     </span>

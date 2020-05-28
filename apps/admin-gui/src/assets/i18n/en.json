@@ -92,7 +92,9 @@
       "GROUP_SELECT_DEFAULT": " -- Select resource first -- ",
       "VO_SELECT_DEFAULT": " -- Select resource first -- ",
       "MEMBER_SELECT_DEFAULT": " -- Select member first -- ",
-      "ALL_SERVICES": "Select from all services"
+      "ALL_SERVICES": "Select from all services",
+      "NOT_SELECTED": "NOT SELECTED",
+      "ALL": "ALL"
     },
     "ALLOWED_GROUPS": {
       "SHOW_VOS_GROUPS": "Select organization",

@@ -11,9 +11,9 @@ import {
 import {
   DeleteAttributeDialogComponent
 } from '../../../../../shared/components/dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
-import { filterCoreAttributes, getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
+import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
-import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
+import { EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import {
   TABLE_ATTRIBUTES_SETTINGS,
   TableConfigService
@@ -123,7 +123,7 @@ export class MemberSettingsAttributesComponent implements OnInit {
   refreshTable() {
     this.loading = true;
     this.attributesManager.getMemberAttributes(this.memberId).subscribe(attributes => {
-      this.attributes = filterCoreAttributes(attributes);
+      this.attributes = attributes;
       this.selection.clear();
       this.loading = false;
     });

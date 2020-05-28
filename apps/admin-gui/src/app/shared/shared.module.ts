@@ -144,7 +144,6 @@ import { ExtSourceTypePipe } from './pipes/ext-source-type.pipe';
 // @ts-ignore
 import { PerunSharedComponentsModule } from '@perun-web-apps/perun/components';
 import { UserRolesComponent } from './components/user-detail-page/user-settings/user-roles/user-roles.component';
-import { EditAttributeDialogComponent } from './components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 import { UserSettingsAppConfigurationComponent } from './components/user-detail-page/user-settings/user-settings-app-configuration/user-settings-app-configuration.component';
 import { ConfigTableConfigModule } from '@perun-web-apps/config/table-config';
 import { PerunPipesModule } from '@perun-web-apps/perun/pipes';
@@ -383,7 +382,6 @@ import { UserDashboardComponent } from './components/user-detail-page/user-dashb
     AddExtSourceDialogComponent,
     ExtSourceTypePipe,
     UserRolesComponent,
-    EditAttributeDialogComponent,
     UserSettingsAppConfigurationComponent,
     RemoveDestinationDialogComponent,
     DestinationListComponent,

@@ -33,6 +33,7 @@ import { PerunFacilityServicesConfigModule } from '@perun-web-apps/perun/facilit
 import { FacilitySettingsManagersComponent } from './pages/facility-detail-page/facility-settings/facility-settings-managers/facility-settings-managers.component';
 import { FacilityServicesDestinationsComponent } from './pages/facility-detail-page/facility-services-destinations/facility-services-destinations.component';
 import { FacilitySettingsOwnersComponent } from './pages/facility-detail-page/facility-settings/facility-settings-owners/facility-settings-owners.component';
+import { PerunPipesModule, UserFullNamePipe } from '@perun-web-apps/perun/pipes';
 
 @NgModule({
   declarations: [
@@ -62,7 +63,11 @@ import { FacilitySettingsOwnersComponent } from './pages/facility-detail-page/fa
     SharedModule,
     UiAlertsModule,
     PerunSharedComponentsModule,
-    PerunFacilityServicesConfigModule
+    PerunFacilityServicesConfigModule,
+    PerunPipesModule
+  ],
+  providers: [
+    UserFullNamePipe
   ]
 })
 export class FacilitiesModule { }

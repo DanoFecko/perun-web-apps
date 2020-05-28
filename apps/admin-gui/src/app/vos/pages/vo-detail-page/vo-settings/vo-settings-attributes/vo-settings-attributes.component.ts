@@ -11,9 +11,9 @@ import {Component, HostBinding, OnInit, ViewChild} from '@angular/core';
 import {AttributesListComponent} from '@perun-web-apps/perun/components';
 import {NotificatorService} from '@perun-web-apps/perun/services';
 import {TranslateService} from '@ngx-translate/core';
-import { filterCoreAttributes, getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
+import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
-import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
+import { EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import {
   TABLE_ATTRIBUTES_SETTINGS,
   TableConfigService
@@ -122,7 +122,7 @@ export class VoSettingsAttributesComponent implements OnInit {
   refreshTable() {
     this.loading = true;
     this.attributesManager.getVoAttributes(this.voId).subscribe(attributes => {
-      this.attributes = filterCoreAttributes(attributes);
+      this.attributes = attributes;
       this.selection.clear();
       this.loading = false;
     });

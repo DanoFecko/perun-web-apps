@@ -15,7 +15,7 @@ export interface EditAttributeDialogData {
 }
 
 @Component({
-  selector: 'app-edit-attribute-dialog',
+  selector: 'perun-web-apps-edit-attribute-dialog',
   templateUrl: './edit-attribute-dialog.component.html',
   styleUrls: ['./edit-attribute-dialog.component.css']
 })
