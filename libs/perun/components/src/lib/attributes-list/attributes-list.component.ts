@@ -16,7 +16,7 @@ import {SelectionModel} from '@angular/cdk/collections';
 import {AttributeValueComponent} from './attribute-value/attribute-value.component';
 import { Attribute } from '@perun-web-apps/perun/openapi';
 import { IsVirtualAttributePipe } from '@perun-web-apps/perun/pipes';
-import { TABLE_ITEMS_COUNT_OPTIONS } from '@perun-web-apps/perun/utils';
+import { filterCoreAttributes, TABLE_ITEMS_COUNT_OPTIONS } from '@perun-web-apps/perun/utils';
 
 @Component({
   selector: 'perun-web-apps-attributes-list',
@@ -75,7 +75,7 @@ export class AttributesListComponent implements OnChanges, AfterViewInit {
   private isVirtualPipe = new IsVirtualAttributePipe();
 
   ngOnChanges(changes: SimpleChanges) {
-    this.dataSource = new MatTableDataSource<Attribute>(this.attributes);
+    this.dataSource = new MatTableDataSource<Attribute>(filterCoreAttributes(this.attributes));
     this.setDataSource();
   }
 

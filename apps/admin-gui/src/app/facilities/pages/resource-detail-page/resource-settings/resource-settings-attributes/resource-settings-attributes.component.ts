@@ -11,9 +11,9 @@ import {
 import {
   CreateAttributeDialogComponent
 } from '../../../../../shared/components/dialogs/create-attribute-dialog/create-attribute-dialog.component';
-import { filterCoreAttributes, getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
+import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
-import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
+import { EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import { PageEvent } from '@angular/material/paginator';
 import {
   TABLE_ATTRIBUTES_SETTINGS,
@@ -121,7 +121,7 @@ export class ResourceSettingsAttributesComponent implements OnInit {
   refreshTable() {
     this.loading = true;
     this.attributesManager.getResourceAttributes(this.resourceId).subscribe(attributes => {
-      this.attributes = filterCoreAttributes(attributes);
+      this.attributes = attributes;
       this.selection.clear();
       this.loading = false;
     });

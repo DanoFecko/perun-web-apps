@@ -8,9 +8,8 @@ import {
   ResourcesManagerService
 } from '@perun-web-apps/perun/openapi';
 import { MatDialog } from '@angular/material/dialog';
-import { AttributesListComponent } from '@perun-web-apps/perun/components';
+import { AttributesListComponent, EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import { SelectionModel } from '@angular/cdk/collections';
-import { EditAttributeDialogComponent } from '../dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
 import { DeleteAttributeDialogComponent } from '../dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
 import { CreateAttributeDialogComponent } from '../dialogs/create-attribute-dialog/create-attribute-dialog.component';
 import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';

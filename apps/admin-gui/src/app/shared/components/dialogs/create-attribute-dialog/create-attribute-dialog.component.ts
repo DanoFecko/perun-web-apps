@@ -5,7 +5,6 @@ import { AttributesListComponent } from '@perun-web-apps/perun/components';
 import { NotificatorService } from '@perun-web-apps/perun/services';
 import { TranslateService } from '@ngx-translate/core';
 import { AttrEntity } from '@perun-web-apps/perun/models';
-import { filterCoreAttributes } from '@perun-web-apps/perun/utils';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
 import { TableConfigService, TABLE_ATTRIBUTES_SETTINGS } from '@perun-web-apps/config/table-config';
 import { PageEvent } from '@angular/material/paginator';
@@ -123,7 +122,7 @@ export class CreateAttributeDialogComponent implements OnInit {
       this.attributes = this.attributes.filter(attribute => {
         return !unWanted.includes(attribute.id) && this.twoEntityValid(attribute);
       });
-      this.attributes = filterCoreAttributes(this.attributes);
+      this.attributes = this.attributes;
       this.loading = false;
     });
   }

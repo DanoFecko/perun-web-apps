@@ -6,11 +6,11 @@ import { TranslateService } from '@ngx-translate/core';
 import { AttributesListComponent } from '@perun-web-apps/perun/components';
 import { SelectionModel } from '@angular/cdk/collections';
 import { CreateAttributeDialogComponent } from '../../../dialogs/create-attribute-dialog/create-attribute-dialog.component';
-import { filterCoreAttributes, getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
+import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
 import { DeleteAttributeDialogComponent } from '../../../dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
 import { StoreService } from '@perun-web-apps/perun/services';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
-import { EditAttributeDialogComponent } from '../../../dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
+import { EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import {
   TABLE_ATTRIBUTES_SETTINGS,
   TableConfigService
@@ -128,7 +128,7 @@ export class UserSettingsAttributesComponent implements OnInit {
     // TODO Does not apply filter on refresh.
     this.loading = true;
     this.attributesManager.getUserAttributes(this.userId).subscribe(attributes => {
-      this.attributes = filterCoreAttributes(attributes);
+      this.attributes = attributes;
       this.selection.clear();
       this.loading = false;
     });
