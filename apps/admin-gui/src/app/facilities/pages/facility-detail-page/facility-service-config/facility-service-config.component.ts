@@ -8,13 +8,14 @@ import {
   ResourcesManagerService, RichMember, Service, ServicesManagerService, Vo
 } from '@perun-web-apps/perun/openapi';
 import { MatCheckboxChange } from '@angular/material/checkbox';
-import { ServiceSelectValue } from '@perun-web-apps/perun/facility-services-config';
 import { MembersService } from '@perun-web-apps/perun/services';
 import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { UserFullNamePipe } from '@perun-web-apps/perun/pipes';
+import { TranslateService } from '@ngx-translate/core';
 
+export type ServiceSelectValue = 'ALL' | 'NOT_SELECTED';
 
 @Component({
   selector: 'app-facility-service-config',
@@ -29,8 +30,11 @@ export class FacilityServiceConfigComponent implements OnInit {
     private resourceManager: ResourcesManagerService,
     private serviceManager: ServicesManagerService,
     private membersManager: MembersService,
-    private namePipe: UserFullNamePipe
+    private namePipe: UserFullNamePipe,
+    private translate: TranslateService
   ) {
+    this.translate.get('FACILITY_DETAIL.SERVICE_CONFIG.ALL').subscribe(value => this.serviceAllTranslation = value);
+    this.translate.get('FACILITY_DETAIL.SERVICE_CONFIG.NOT_SELECTED').subscribe(value => this.serviceNotSelectedTranslation = value);
   }
 
   facility: Facility;
@@ -55,10 +59,13 @@ export class FacilityServiceConfigComponent implements OnInit {
   groupField = new FormControl();
   memberField = new FormControl();
 
-  filteredServices: Observable<Service[]>;
+  filteredServices: Observable<Service[] | ServiceSelectValue[]>;
   filteredResources: Observable<Resource[]>;
   filteredGroups: Observable<Group[]>;
   filteredMembers: Observable<RichMember[]>;
+
+  serviceAllTranslation: String;
+  serviceNotSelectedTranslation: String;
 
   ngOnInit() {
     this.route.parent.params.subscribe(parentParams => {
@@ -95,7 +102,8 @@ export class FacilityServiceConfigComponent implements OnInit {
       );
   }
 
-  onSelectedService(s: Service) {
+  onSelectedService(s: Service | ServiceSelectValue) {
+    this.selectedService = s;
   }
 
   onSelectedResource(r: Resource) {
@@ -104,6 +112,8 @@ export class FacilityServiceConfigComponent implements OnInit {
       this.resourceManager.getAssignedGroups(this.selectedResource.id).subscribe(groups => this.groups = groups);
       this.selectedGroup = undefined;
       this.selectedMember = undefined;
+    } else {
+      this.groups = undefined;
     }
   }
 
@@ -118,6 +128,8 @@ export class FacilityServiceConfigComponent implements OnInit {
     if (this.selectedGroup !== undefined) {
       this.membersManager.getCompleteRichMembersForGroup(this.selectedGroup.id, this.attrNames).subscribe(members => this.members = members);
       this.selectedMember = undefined;
+    } else {
+      this.members = undefined;
     }
   }
 
@@ -125,31 +137,37 @@ export class FacilityServiceConfigComponent implements OnInit {
     this.selectedMember = m;
   }
 
-  private _filterServices(value: string): Service[] {
+  private _filterServices(value: String): Service[] | ServiceSelectValue[] {
     const filterValue = value.toString().toLowerCase();
 
-    return this.services.filter(service => service.name.toLowerCase().includes(filterValue));
+    return this.services.filter(service => service.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(filterValue));
   }
 
-  private _filterResources(value: string): Resource[] {
+  private _filterResources(value: String): Resource[] {
     const filterValue = value.toString().toLowerCase();
 
-    return this.resources.filter(resource => resource.name.toLowerCase().includes(filterValue));
+    return this.resources.filter(resource => resource.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(filterValue));
   }
 
-  private _filterGroups(value: string): Group[] {
+  private _filterGroups(value: String): Group[] {
     const filterValue = value.toString().toLowerCase();
 
-    return this.groups.filter(group => group.name.toLowerCase().includes(filterValue));
+    return this.groups.filter(group => group.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(filterValue));
   }
 
-  private _filterMembers(value: string): RichMember[] {
+  private _filterMembers(value: String): RichMember[] {
     const filterValue = value.toString().toLowerCase();
     return this.members.filter(member => this.namePipe.transform(member.user).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(filterValue));
   }
 
   serviceDisplayFn(service) {
     if (service !== null) {
+      if (service === 'ALL') {
+        return this.serviceAllTranslation;
+      }
+      if (service === 'NOT_SELECTED') {
+        return this.serviceNotSelectedTranslation;
+      }
       return service.name;
     }
   }
@@ -169,6 +187,31 @@ export class FacilityServiceConfigComponent implements OnInit {
   memberDisplayFn(member) {
     if (member !== null) {
       return this.namePipe.transform(member.user);
+    }
+  }
+
+  updatedSerVal(e) {
+    if (e.target.value === '') {
+      this.selectedService = "NOT_SELECTED";
+    }
+  }
+
+  updatedResVal(e) {
+    if (e.target.value === '') {
+      this.groups = undefined;
+      this.members = undefined;
+    }
+  }
+
+  updatedGroupVal(e) {
+    if (e.target.value === '') {
+      this.members = undefined;
+    }
+  }
+
+
+  updatedMemVal(e) {
+    if (e.target.value === '') {
     }
   }
 }

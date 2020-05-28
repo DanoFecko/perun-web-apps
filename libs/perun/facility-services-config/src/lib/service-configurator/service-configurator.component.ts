@@ -13,9 +13,14 @@ import {
   TableConfigService
 } from '@perun-web-apps/config/table-config';
 import { PageEvent } from '@angular/material/paginator';
-import { AttributesListComponent, EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
+import {
+  AttributesListComponent,
+  CreateAttributeDialogComponent,
+  EditAttributeDialogComponent
+} from '@perun-web-apps/perun/components';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatDialog } from '@angular/material/dialog';
+import { getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
 
 export type ServiceSelectValue = 'ALL' | 'NOT_SELECTED';
 
@@ -156,6 +161,25 @@ export class ServiceConfiguratorComponent implements OnInit, OnChanges {
     this.tableConfigService.setTablePageSize(this.tableId, event.pageSize);
   }
 
+  onAddAttFacility() {
+    const config = getDefaultDialogConfig();
+    config.width = '1050px';
+    config.data = {
+      entityId: this.facility.id,
+      entity: 'facility',
+      notEmptyAttributes: this.facilityAttributes,
+      style: 'facility-theme'
+    };
+
+    const dialogRef = this.dialog.open(CreateAttributeDialogComponent, config);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'saved') {
+        this.reloadAll();
+      }
+    });
+  }
+
   onSaveFacility() {
     this.facilityAlist.updateMapAttributes();
 
@@ -172,6 +196,25 @@ export class ServiceConfiguratorComponent implements OnInit, OnChanges {
       if (result) {
         this.selectionFacility.clear()
         this.ngOnInit()
+      }
+    });
+  }
+
+  onAddAttResource() {
+    const config = getDefaultDialogConfig();
+    config.width = '1050px';
+    config.data = {
+      entityId: this.resource.id,
+      entity: 'resource',
+      notEmptyAttributes: this.resourceAttributes,
+      style: 'facility-theme'
+    };
+
+    const dialogRef = this.dialog.open(CreateAttributeDialogComponent, config);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'saved') {
+        this.reloadAll();
       }
     });
   }
@@ -196,6 +239,25 @@ export class ServiceConfiguratorComponent implements OnInit, OnChanges {
     });
   }
 
+  onAddAttGroup() {
+    const config = getDefaultDialogConfig();
+    config.width = '1050px';
+    config.data = {
+      entityId: this.group.id,
+      entity: 'group',
+      notEmptyAttributes: this.groupAttributes,
+      style: 'facility-theme'
+    };
+
+    const dialogRef = this.dialog.open(CreateAttributeDialogComponent, config);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'saved') {
+        this.reloadAll();
+      }
+    });
+  }
+
   onSaveGroup() {
     this.groupAList.updateMapAttributes();
 
@@ -212,6 +274,25 @@ export class ServiceConfiguratorComponent implements OnInit, OnChanges {
       if (result) {
         this.selectionGroup.clear()
         this.ngOnInit()
+      }
+    });
+  }
+
+  onAddAttMember() {
+    const config = getDefaultDialogConfig();
+    config.width = '1050px';
+    config.data = {
+      entityId: this.member.id,
+      entity: 'member',
+      notEmptyAttributes: this.memberAttributes,
+      style: 'facility-theme'
+    };
+
+    const dialogRef = this.dialog.open(CreateAttributeDialogComponent, config);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'saved') {
+        this.reloadAll();
       }
     });
   }

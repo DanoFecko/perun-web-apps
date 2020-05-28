@@ -96,8 +96,8 @@
       "VO_SELECT_DEFAULT": " -- Select resource first -- ",
       "MEMBER_SELECT_DEFAULT": " -- Select member first -- ",
       "ALL_SERVICES": "Select from all services",
-      "NOT_SELECTED": "NOT SELECTED",
-      "ALL": "ALL"
+      "NOT_SELECTED": "Show all set attributes",
+      "ALL": "Show required attributes for all services"
     },
     "ALLOWED_GROUPS": {
       "SHOW_VOS_GROUPS": "Select organization",
@@ -1595,7 +1595,11 @@
         "MEMBER_GROUPS": "Member groups",
         "ADMINS_GROUPS": "Groups where user is admin"
       },
-      "REFRESH_BUTTON": "Refresh"
+      "REFRESH_BUTTON": "Refresh",
+      "SERVICES_CONFIGURATIONS": {
+        "ADD": "Add",
+        "SAVE": "Save"
+      }
     },
     "UI": {
       "ALERTS": {

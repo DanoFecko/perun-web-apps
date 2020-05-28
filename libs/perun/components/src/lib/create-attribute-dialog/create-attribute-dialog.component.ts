@@ -1,13 +1,13 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { SelectionModel } from '@angular/cdk/collections';
-import { AttributesListComponent } from '@perun-web-apps/perun/components';
 import { NotificatorService } from '@perun-web-apps/perun/services';
 import { TranslateService } from '@ngx-translate/core';
 import { AttrEntity } from '@perun-web-apps/perun/models';
 import { Attribute, AttributesManagerService } from '@perun-web-apps/perun/openapi';
 import { TableConfigService, TABLE_ATTRIBUTES_SETTINGS } from '@perun-web-apps/config/table-config';
 import { PageEvent } from '@angular/material/paginator';
+import { AttributesListComponent } from '../attributes-list/attributes-list.component';
 
 export interface CreateAttributeDialogData {
   entityId: number;
@@ -19,7 +19,7 @@ export interface CreateAttributeDialogData {
 }
 
 @Component({
-  selector: 'app-create-attribute-dialog',
+  selector: 'perun-web-apps-create-attribute-dialog',
   templateUrl: './create-attribute-dialog.component.html',
   styleUrls: ['./create-attribute-dialog.component.scss']
 })

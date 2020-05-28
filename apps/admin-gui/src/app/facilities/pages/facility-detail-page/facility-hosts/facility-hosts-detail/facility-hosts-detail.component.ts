@@ -6,8 +6,7 @@ import { TABLE_ATTRIBUTES_SETTINGS, TableConfigService } from '@perun-web-apps/c
 import { ActivatedRoute } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { filterCoreAttributes, getDefaultDialogConfig } from '@perun-web-apps/perun/utils';
-import { EditAttributeDialogComponent } from '../../../../../shared/components/dialogs/edit-attribute-dialog/edit-attribute-dialog.component';
-import { AttributesListComponent } from '@perun-web-apps/perun/components';
+import { AttributesListComponent, EditAttributeDialogComponent } from '@perun-web-apps/perun/components';
 import { DeleteAttributeDialogComponent } from '../../../../../shared/components/dialogs/delete-attribute-dialog/delete-attribute-dialog.component';
 import { CreateAttributeDialogComponent } from '../../../../../shared/components/dialogs/create-attribute-dialog/create-attribute-dialog.component';
 

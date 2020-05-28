@@ -46,6 +46,7 @@ import { AutoFocusDirective } from '@perun-web-apps/perun/directives';
 import { UserExtSourcesListComponent } from './user-ext-sources-list/user-ext-sources-list.component';
 import { RemoveUserExtSourceDialogComponent } from './remove-user-ext-source-dialog/remove-user-ext-source-dialog.component';
 import { EditAttributeDialogComponent } from './attributes-list/edit-attribute-dialog/edit-attribute-dialog.component';
+import { CreateAttributeDialogComponent } from './create-attribute-dialog/create-attribute-dialog.component';
 
 
 @NgModule({
@@ -101,7 +102,8 @@ import { EditAttributeDialogComponent } from './attributes-list/edit-attribute-d
     RemoveUserExtSourceDialogComponent,
     AutoFocusDirective,
     AttributeValueIntegerComponent,
-    EditAttributeDialogComponent
+    EditAttributeDialogComponent,
+    CreateAttributeDialogComponent
   ],
   exports: [
     VoSelectTableComponent,
@@ -125,7 +127,8 @@ import { EditAttributeDialogComponent } from './attributes-list/edit-attribute-d
     RemoveUserExtSourceDialogComponent,
     AutoFocusDirective,
     MenuButtonsFieldComponent,
-    EditAttributeDialogComponent
+    EditAttributeDialogComponent,
+    CreateAttributeDialogComponent
   ]
 })
 export class PerunSharedComponentsModule {
