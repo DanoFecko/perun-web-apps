@@ -11,19 +11,15 @@ import { SecondGroupComponent } from './components/second-group/second-group.com
 import { UiMaterialModule } from '@perun-web-apps/ui/material';
 import { HTTP_INTERCEPTORS, HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { AdminGuiConfigService } from 'apps/admin-gui/src/app/core/services/common/admin-gui-config.service';
 import { ApiModule, Configuration, ConfigurationParameters } from '@perun-web-apps/perun/openapi';
-import { CustomIconService, StoreService } from '@perun-web-apps/perun/services';
+import { ApiInterceptor, ApiService, CustomIconService, StoreService } from '@perun-web-apps/perun/services';
 import { PERUN_API_SERVICE } from '@perun-web-apps/perun/tokens';
-import { ApiService } from 'apps/admin-gui/src/app/core/services/api/api.service';
-import { ApiInterceptor } from 'apps/admin-gui/src/app/core/services/api/ApiInterceptor';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { SharedModule } from 'apps/admin-gui/src/app/shared/shared.module';
-import { CoreModule } from 'apps/admin-gui/src/app/core/core.module';
 import { MatIconModule } from '@angular/material/icon';
 import { GeneralModule } from '@perun-web-apps/general';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { AppRoutingModule } from './app-routing.module';
+import { DeschizConfigService } from './services/deschiz-config.service';
 
 export const API_INTERCEPTOR_PROVIDER: Provider = {
   provide: HTTP_INTERCEPTORS,
@@ -38,12 +34,11 @@ export function HttpLoaderFactory(http: HttpClient) {
 export function apiConfigFactory(store: StoreService): Configuration {
   const params: ConfigurationParameters = {
     basePath: store.get('api_url')
-    // set configuration parameters here.
   };
   return new Configuration(params);
 }
 
-const loadConfigs = (appConfig: AdminGuiConfigService) => {
+const loadConfigs = (appConfig: DeschizConfigService) => {
   return () => {
     return appConfig.loadConfigs();
   };
@@ -53,14 +48,12 @@ const loadConfigs = (appConfig: AdminGuiConfigService) => {
   declarations: [AppComponent, HomePageComponent, FirstGroupComponent, SecondGroupComponent],
   imports: [
     BrowserModule,
-    RouterModule.forRoot([], { initialNavigation: 'enabled' }),
+    RouterModule,
     MatStepperModule,
     UiMaterialModule,
     HttpClientModule,
     BrowserAnimationsModule,
     BrowserModule,
-    SharedModule,
-    CoreModule,
     AppRoutingModule,
     MatIconModule,
     GeneralModule,
@@ -73,12 +66,12 @@ const loadConfigs = (appConfig: AdminGuiConfigService) => {
     }),
     ApiModule
   ],
-  providers: [AdminGuiConfigService,
+  providers: [
     {
       provide: APP_INITIALIZER,
       useFactory: loadConfigs,
       multi: true,
-      deps: [AdminGuiConfigService]
+      deps: [DeschizConfigService]
     },
     {
       provide: Configuration,
