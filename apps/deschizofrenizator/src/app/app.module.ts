@@ -20,6 +20,10 @@ import { GeneralModule } from '@perun-web-apps/general';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { AppRoutingModule } from './app-routing.module';
 import { DeschizConfigService } from './services/deschiz-config.service';
+import { FlexModule } from '@angular/flex-layout';
+import { PerunSharedComponentsModule } from '@perun-web-apps/perun/components';
+import { ThirdGroupComponent } from './components/third-group/third-group.component';
+import { FourthGroupComponent } from './components/fourth-group/fourth-group.component';
 
 export const API_INTERCEPTOR_PROVIDER: Provider = {
   provide: HTTP_INTERCEPTORS,
@@ -45,7 +49,7 @@ const loadConfigs = (appConfig: DeschizConfigService) => {
 };
 
 @NgModule({
-  declarations: [AppComponent, HomePageComponent, FirstGroupComponent, SecondGroupComponent],
+  declarations: [AppComponent, HomePageComponent, FirstGroupComponent, SecondGroupComponent, ThirdGroupComponent, FourthGroupComponent],
   imports: [
     BrowserModule,
     RouterModule,
@@ -64,7 +68,9 @@ const loadConfigs = (appConfig: DeschizConfigService) => {
         deps: [HttpClient]
       }
     }),
-    ApiModule
+    ApiModule,
+    FlexModule,
+    PerunSharedComponentsModule
   ],
   providers: [
     {

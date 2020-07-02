@@ -171,6 +171,10 @@ export class CustomIconService {
     {
       url: 'assets/img/PerunWebImages/user-dark.svg',
       name: 'perun-user-dark'
+    },
+    {
+      url: 'assets/img/PerunWebImages/next.svg',
+      name: 'green-right-arrow'
     }
   ];
 

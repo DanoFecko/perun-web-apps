@@ -1122,7 +1122,9 @@
               "apps/deschizofrenizator/src/favicon.ico",
               "apps/deschizofrenizator/src/assets"
             ],
-            "styles": ["apps/deschizofrenizator/src/styles.scss"],
+            "styles": [
+              "apps/deschizofrenizator/src/styles.scss",
+              "node_modules/bootstrap/dist/css/bootstrap.css"],
             "scripts": []
           },
           "configurations": {

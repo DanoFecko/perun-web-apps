@@ -1,0 +1,101 @@
+{
+  "SHARED_LIB": {
+    "PERUN": {
+      "COMPONENTS": {
+        "GROUPS_LIST": {
+          "TABLE_GROUP_ID": "Id",
+          "TABLE_VO_NAME": "Vo",
+          "TABLE_GROUP_NAME": "Name",
+          "TABLE_SEARCH": "Filter by name, description or ID",
+          "TABLE_GROUP_DESCRIPTION": "Description"
+        },
+        "GROUP_MENU": {
+          "MOVE": "Move group",
+          "RENAME": "Update name/description"
+        },
+        "VO_SELECT_TABLE": {
+          "ID": "Id",
+          "NAME": "Name",
+          "RECENT": "Recently viewed",
+          "SHORTNAME": "Short name"
+        },
+        "RESOURCES_LIST": {
+          "TITLE": "Resources",
+          "DELETE": "Remove selected",
+          "TABLE_RESOURCE_ID": "id",
+          "TABLE_RESOURCE_NAME": "Name",
+          "TABLE_FACILITY_NAME": "Facility name",
+          "TABLE_RESOURCE_TAGS": "Tags",
+          "TABLE_SEARCH": "Filter by name, description or ID",
+          "TABLE_RESOURCE_DESCRIPTION": "Description",
+          "NO_RESOURCES_WARNING": "No resources assigned."
+        },
+        "ATTRIBUTE_VALUE_LIST": {
+          "EDIT_DIALOG": {
+            "TITLE": "Edit attribute value",
+            "SUBMIT_BUTTON": "Submit",
+            "CANCEL_BUTTON": "Cancel"
+          },
+          "DELETE_DIALOG": {
+            "TITLE": "Delete attribue value",
+            "DESCRIPTION": "Do you really want to delete this attribute list value from list?",
+            "SUBMIT_BUTTON": "Delete",
+            "CANCEL_BUTTON": "Cancel"
+          }
+        },
+        "ATTRIBUTES_LIST": {
+          "FILTER": "Filter by id, name, value or description",
+          "ID": "Id",
+          "NAME": "Name",
+          "VALUE": "Value",
+          "DESCRIPTION": "Description"
+        },
+        "USER_DONT_EXIST": {
+          "TITLE": "Requested user (by ID or external identity) doesn't exist."
+        },
+        "TABLE_OPTIONS": {
+          "EXPORT_TO_FILE": "Export to file"
+        },
+        "NOTIFICATOR": {
+          "NOTIFICATION": {
+            "DEFAULT_ACTION": "Show",
+            "DIALOG_CLOSE": "Close",
+            "DIALOG_BUG_REPORT": "Report a bug",
+            "DEFAULT_RPC_ERROR_MESSAGE": "An operation failed."
+          }
+        },
+        "BUG_REPORT": {
+          "TITLE": "Report a bug",
+          "SUBJECT": "Subject",
+          "SUBJECT_VALUE": "Reported error: ",
+          "SUBJECT_ERROR": "Subject cannot be empty.",
+          "MESSAGE": "Message",
+          "MESSAGE_PLACEHOLDER": "You can describe what you did that caused the error. (Minimal length is 60 characters)",
+          "MESSAGE_ERROR": "Minimal length is 60.",
+          "CANCEL": "Cancel",
+          "SEND": "Send",
+          "SUCCESS": "Bug report send"
+        }
+      },
+      "ORGANIZATIONS": {
+        "TITLE": "User organizations",
+        "FILTER": "Filter by name or ID",
+        "YOU_ARE_ADMIN": "Organizations where you are admin",
+        "YOU_ARE_MEMBER": "Organizations where you are member",
+        "USER_IS_ADMIN": "Organizations where user is admin",
+        "USER_IS_MEMBER": "Organizations where user is member"
+      },
+      "GROUPS": {
+        "MEMBER_GROUPS": "Member groups",
+        "ADMINS_GROUPS": "Groups where user is admin"
+      },
+      "REFRESH_BUTTON": "Refresh"
+    },
+    "UI": {
+      "ALERTS": {
+        "NO_GROUPS": "No groups found.",
+        "NO_FILTER_RESULTS_ALERT": "No results match given search criteria."
+      }
+    }
+  }
+}

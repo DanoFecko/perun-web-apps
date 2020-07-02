@@ -1,61 +1,42 @@
-<!--<div class="container">-->
-  <mat-horizontal-stepper [linear]="false" #stepper>
+<!--<div class="mat-card">-->
+<div>
+  <mat-card-header>
 
-    <mat-step>
+    <mat-form-field>
+      <mat-label>UserID1</mat-label>
+      <input [(ngModel)]="userToBeRemovedID" (keyup.enter)="changeUserToBeRemoved()" matInput>
+    </mat-form-field>
 
-      <div class="row">
+    <mat-form-field class="ml-5">
+      <mat-label>UserID2</mat-label>
+      <input [(ngModel)]="userToBeKeptID" (keyup.enter)="changeUserToBeKept()" matInput>
+    </mat-form-field>
 
-        <div class="col-6">
-          <mat-card>
-            <mat-card-header>
-              <mat-form-field class="">
-                <mat-label>UserID1</mat-label>
-                <input [(ngModel)]="userToBeRemovedID" (keyup.enter)="changeUserToBeRemoved()" matInput>
-              </mat-form-field>
-            </mat-card-header>
-            <mat-card-content *ngIf="userToBeRemoved !== undefined">
-              <mat-form-field>
-                <mat-label>First name</mat-label>
-                <input type="number" [(ngModel)]="userToBeRemoved.firstName" matInput>
-              </mat-form-field>
-              <mat-divider>
-              </mat-divider>
-              <mat-form-field>
-                <mat-label>Last name</mat-label>
-                <input type="number" [(ngModel)]="userToBeRemoved.lastName" matInput>
-              </mat-form-field>
-              <mat-form-field>
-                <mat-label>Middle Name</mat-label>
-                <input type="number" [(ngModel)]="userToBeRemoved.lastName" matInput>
-              </mat-form-field>
-              <mat-form-field>
-                <mat-label>Title Before</mat-label>
-                <input type="number" [(ngModel)]="userToBeRemoved.lastName" matInput>
-              </mat-form-field>
-            </mat-card-content>
-          </mat-card>
-        </div>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-horizontal-stepper [linear]="false" #stepper>
 
-        <div class="col-6">
-          <mat-card>
-            <mat-card-header>
-              <mat-form-field class="">
-                <mat-label>UserID2</mat-label>
-                <input [(ngModel)]="userToBeKeptID" (keyup.enter)="changeUserToBeKept()" matInput>
-              </mat-form-field>
-            </mat-card-header>
-          </mat-card>
-        </div>
-      </div>
+      <mat-step>
+        <perun-web-apps-first-group
+            [userToBeKept]="userToBeKept"
+            [userToBeRemoved]="userToBeRemoved">
+        </perun-web-apps-first-group>
+      </mat-step>
 
-    </mat-step>
+      <mat-step>
+        <perun-web-apps-second-group
+            [userToBeRemoved]="userToBeRemoved"
+            [userToBeKept]="userToBeKept">
+        </perun-web-apps-second-group>
+      </mat-step>
 
-    <perun-web-apps-first-group [userToBeKept]="userToBeKept" [userToBeRemoved]="userToBeRemoved">
-    </perun-web-apps-first-group>
-
-    <mat-step>
-      <perun-web-apps-second-group>
-      </perun-web-apps-second-group>
-    </mat-step>
-  </mat-horizontal-stepper>
+      <mat-step>
+        <perun-web-apps-third-group
+            [userToBeRemoved]="userToBeRemoved"
+            [userToBeKept]="userToBeKept">
+        </perun-web-apps-third-group>
+      </mat-step>
+    </mat-horizontal-stepper>
+  </mat-card-content>
+</div>
 <!--</div>-->

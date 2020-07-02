@@ -1,0 +1,86 @@
+<div class="mt-3" fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="15px">
+  <mat-card fxFlex="50" *ngIf="userToBeRemoved !== undefined">
+    <mat-card-content>
+      <mat-form-field class="mt-3">
+        <mat-label>First name</mat-label>
+        <input [(ngModel)]="userToBeRemoved.firstName" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="firstNameTransfer()">play_arrow</mat-icon>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Last name</mat-label>
+        <input [(ngModel)]="userToBeRemoved.lastName" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="lastNameTransfer()">play_arrow</mat-icon>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Middle Name</mat-label>
+        <input [(ngModel)]="userToBeRemoved.middleName" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="middleNameTransfer()">play_arrow</mat-icon>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Title Before</mat-label>
+        <input [(ngModel)]="userToBeRemoved.titleBefore" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="titleBeforeTransfer()">play_arrow</mat-icon>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Title After</mat-label>
+        <input [(ngModel)]="userToBeRemoved.titleAfter" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="titleAfterTransfer()">play_arrow</mat-icon>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Sponsored user</mat-label>
+        <input [(ngModel)]="userToBeRemoved.sponsoredUser" matInput>
+      </mat-form-field>
+      <mat-icon class="green-icon" (click)="sponsoredTransfer()">play_arrow</mat-icon>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card fxFlex="50" *ngIf="userToBeKept !== undefined">
+    <mat-card-content>
+      <mat-form-field class="mt-3">
+        <mat-label>First name</mat-label>
+        <input [(ngModel)]="userToBeKept.firstName" matInput>
+      </mat-form-field>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Last name</mat-label>
+        <input [(ngModel)]="userToBeKept.lastName" matInput>
+      </mat-form-field>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Middle Name</mat-label>
+        <input [(ngModel)]="userToBeKept.middleName" matInput>
+      </mat-form-field>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Title Before</mat-label>
+        <input [(ngModel)]="userToBeKept.titleBefore" matInput>
+      </mat-form-field>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Title After</mat-label>
+        <input [(ngModel)]="userToBeKept.titleAfter" matInput>
+      </mat-form-field>
+      <mat-divider>
+      </mat-divider>
+      <mat-form-field class="mt-3">
+        <mat-label>Sponsored user</mat-label>
+        <input [(ngModel)]="userToBeKept.sponsoredUser" matInput>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+</div>

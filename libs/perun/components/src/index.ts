@@ -16,3 +16,5 @@ export * from './lib/redirect-page/redirect-page.component';
 export * from './lib/change-expiration-dialog/change-expiration-dialog.component';
 export * from './lib/groups-list/groups-list.component';
 export * from './lib/groups-tree/groups-tree.component';
+export * from './lib/ext-sources-list/ext-sources-list.component'
+export * from './lib/user-ext-sources-list/user-ext-sources-list.component'

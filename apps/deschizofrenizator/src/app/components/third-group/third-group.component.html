@@ -1,0 +1,26 @@
+<div class="mt-3" fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="15px">
+  <mat-card fxFlex="50" *ngIf="this.userToBeRemoved !== undefined">
+    <mat-card-content>
+      <perun-web-apps-members-list
+          [members]="membersRemoved"
+          [selection]="this.selection">
+
+      </perun-web-apps-members-list>
+      <!--      <perun-web-apps-user-ext-sources-list-->
+      <!--          [userExtSources]="userToBeRemoved.userExtSources"-->
+      <!--          [selection]="selection"-->
+      <!--          [hideColumns]="hiddenColumns">-->
+
+      <!--      </perun-web-apps-user-ext-sources-list>-->
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card fxFlex="50" *ngIf="this.userToBeKept !== undefined">
+    <mat-card-content class="ml-5">
+      <perun-web-apps-members-list
+          [members]="membersKept">
+      </perun-web-apps-members-list>
+    </mat-card-content>
+  </mat-card>
+
+</div>

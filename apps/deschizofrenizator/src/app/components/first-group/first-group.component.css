@@ -1,0 +1,9 @@
+mat-form-field {
+    width: 90%;
+}
+
+.green-icon {
+    color: limegreen;
+    font-size: 40px;
+    cursor: pointer;
+}
