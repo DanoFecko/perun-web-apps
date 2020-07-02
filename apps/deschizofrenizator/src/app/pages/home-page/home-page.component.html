@@ -1,5 +1,4 @@
-<!--<div class="mat-card">-->
-<div>
+<div class="mat-card">
   <mat-card-header>
 
     <mat-form-field>
@@ -17,6 +16,7 @@
     <mat-horizontal-stepper [linear]="false" #stepper>
 
       <mat-step>
+        <ng-template matStepLabel>User</ng-template>
         <perun-web-apps-first-group
             [userToBeKept]="userToBeKept"
             [userToBeRemoved]="userToBeRemoved">
@@ -24,6 +24,7 @@
       </mat-step>
 
       <mat-step>
+        <ng-template matStepLabel>User attributes</ng-template>
         <perun-web-apps-second-group
             [userToBeRemoved]="userToBeRemoved"
             [userToBeKept]="userToBeKept">
@@ -31,12 +32,21 @@
       </mat-step>
 
       <mat-step>
+        <ng-template matStepLabel>Members</ng-template>
         <perun-web-apps-third-group
-            [userToBeRemoved]="userToBeRemoved"
-            [userToBeKept]="userToBeKept">
+            [userToBeKept]="userToBeKept"
+            [userToBeRemoved]="userToBeRemoved">
         </perun-web-apps-third-group>
       </mat-step>
     </mat-horizontal-stepper>
   </mat-card-content>
+  <mat-card-footer>
+    <button mat-flat-button color="primary" class="ml-2" (click)="onSave()">
+      Save
+    </button>
+
+    <button mat-flat-button color="warn" class="ml-2" (click)="onReset()">
+      Reset
+    </button>
+  </mat-card-footer>
 </div>
-<!--</div>-->

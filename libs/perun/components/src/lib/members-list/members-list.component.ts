@@ -47,7 +47,7 @@ export class MembersListComponent implements OnChanges, AfterViewInit {
   searchString: string;
 
   @Input()
-  selection: SelectionModel<RichMember>;
+  selection: SelectionModel<RichMember> = new SelectionModel<RichMember>();
 
   @Input()
   hideColumns: string[] = [];
@@ -91,7 +91,7 @@ export class MembersListComponent implements OnChanges, AfterViewInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  ngOnChanges(changes: SimpleChanges) {
+  ngOnChanges() {
     this.displayedColumns = this.displayedColumns.filter(x => !this.hideColumns.includes(x));
     this.dataSource = new MatTableDataSource<RichMember>(this.members);
     this.setDataSource();

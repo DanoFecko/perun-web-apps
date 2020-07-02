@@ -1,10 +1,12 @@
 <div class="mt-3" fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="15px">
   <mat-card fxFlex="50" *ngIf="this.userToBeRemoved !== undefined">
     <mat-card-content>
+      <button mat-flat-button color="accent" (click)="onTransfer()">Transfer Selected</button>
       <perun-web-apps-attributes-list
           [attributes]="this.userToBeRemoved.userAttributes"
           [selection]="this.selection"
-          [hiddenColumns]="hiddenColumns">
+          [hiddenColumns]="hiddenColumns"
+          [pageSize]="5">
       </perun-web-apps-attributes-list>
     </mat-card-content>
   </mat-card>
@@ -12,6 +14,7 @@
   <mat-card fxFlex="50" *ngIf="this.userToBeKept !== undefined">
     <mat-card-content class="ml-5">
       <perun-web-apps-attributes-list
+          [pageSize]="5"
           [attributes]="this.userToBeKept.userAttributes"
           [hiddenColumns]="hiddenColumns">
       </perun-web-apps-attributes-list>

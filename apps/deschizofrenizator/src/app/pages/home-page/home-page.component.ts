@@ -25,9 +25,6 @@ export class HomePageComponent implements OnInit {
 
   userToBeRemovedID: number;
 
-  membersKept: RichMember[] = [];
-  membersRemoved: RichMember[] = [];
-
   ngOnInit(): void {
   }
 
@@ -37,17 +34,6 @@ export class HomePageComponent implements OnInit {
       this.userToBeKept = user;
       this.usersService.getUserExtSources(this.userToBeKeptID).subscribe(extS => {
         this.userToBeKept.userExtSources = extS;
-        this.membersService.getMembersByUser(this.userToBeKeptID).subscribe(members => {
-          for (const m of members) {
-            // const rm = m as RichMember;
-            // rm.user = this.userToBeKept
-            // rm.userExtSources = this.userToBeKept.userExtSources;
-            // rm.userAttributes = this.userToBeKept.userAttributes;
-            // rm.memberAttributes = this
-            // this.membersKept.push(rm);
-            this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => this.membersKept.push(richMember));
-          }
-        });
       });
     });
   }
@@ -57,12 +43,15 @@ export class HomePageComponent implements OnInit {
       this.userToBeRemoved = user;
       this.usersService.getUserExtSources(this.userToBeRemovedID).subscribe(extS => {
         this.userToBeRemoved.userExtSources = extS;
-        this.membersService.getMembersByUser(this.userToBeRemovedID).subscribe(members => {
-          for (const m of members) {
-            this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => this.membersRemoved.push(richMember));
-          }
-        });
       });
     });
+  }
+
+  onSave() {
+  }
+
+  onReset() {
+    if (this.userToBeKept !== undefined) { this.changeUserToBeKept() }
+    if (this.userToBeRemoved !== undefined) { this.changeUserToBeRemoved() }
   }
 }
