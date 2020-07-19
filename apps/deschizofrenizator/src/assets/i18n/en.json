@@ -37,7 +37,7 @@
             "CANCEL_BUTTON": "Cancel"
           },
           "DELETE_DIALOG": {
-            "TITLE": "Delete attribue value",
+            "TITLE": "Delete attribute value",
             "DESCRIPTION": "Do you really want to delete this attribute list value from list?",
             "SUBMIT_BUTTON": "Delete",
             "CANCEL_BUTTON": "Cancel"

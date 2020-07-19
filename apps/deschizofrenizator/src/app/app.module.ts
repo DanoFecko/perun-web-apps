@@ -24,6 +24,9 @@ import { FlexModule } from '@angular/flex-layout';
 import { PerunSharedComponentsModule } from '@perun-web-apps/perun/components';
 import { ThirdGroupComponent } from './components/third-group/third-group.component';
 import { FourthGroupComponent } from './components/fourth-group/fourth-group.component';
+import { TransferMemberDialogComponent } from './components/transfer-member-dialog/transfer-member-dialog.component';
+import { MatSortModule } from '@angular/material/sort';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 export const API_INTERCEPTOR_PROVIDER: Provider = {
   provide: HTTP_INTERCEPTORS,
@@ -49,7 +52,7 @@ const loadConfigs = (appConfig: DeschizConfigService) => {
 };
 
 @NgModule({
-  declarations: [AppComponent, HomePageComponent, FirstGroupComponent, SecondGroupComponent, ThirdGroupComponent, FourthGroupComponent],
+  declarations: [AppComponent, HomePageComponent, FirstGroupComponent, SecondGroupComponent, ThirdGroupComponent, FourthGroupComponent, TransferMemberDialogComponent],
   imports: [
     BrowserModule,
     RouterModule,
@@ -70,7 +73,9 @@ const loadConfigs = (appConfig: DeschizConfigService) => {
     }),
     ApiModule,
     FlexModule,
-    PerunSharedComponentsModule
+    PerunSharedComponentsModule,
+    MatSortModule,
+    MatPaginatorModule
   ],
   providers: [
     {

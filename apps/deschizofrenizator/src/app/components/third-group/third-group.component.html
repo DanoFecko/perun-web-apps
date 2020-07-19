@@ -1,21 +1,23 @@
 <div class="mt-3" fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="15px">
   <mat-card fxFlex="45" *ngIf="this.membersRemoved.length === this.membersRLength">
     <mat-card-content>
-      <button mat-flat-button color="accent" (click)="onTransfer()">Transfer Selected</button>
-      <perun-web-apps-members-list
+<!--      <button mat-flat-button color="accent" (click)="onTransfer()">Transfer Selected</button>-->
+      <perun-web-apps-users-members-list
           [pageSize]="5"
           [members]="membersRemoved"
-          [selection]="this.selection">
-      </perun-web-apps-members-list>
+          [selection]="this.selection"
+          (transfer)="onTransfer($event)">
+      </perun-web-apps-users-members-list>
     </mat-card-content>
   </mat-card>
 
   <mat-card fxFlex="45" *ngIf="this.membersKept.length == this.membersKLength">
     <mat-card-content class="ml-5">
-      <perun-web-apps-members-list
+      <perun-web-apps-users-members-list
           [pageSize]="5"
-          [members]="membersKept">
-      </perun-web-apps-members-list>
+          [members]="membersKept"
+          [hideColumns]="['transfer']">
+      </perun-web-apps-users-members-list>
     </mat-card-content>
   </mat-card>
 

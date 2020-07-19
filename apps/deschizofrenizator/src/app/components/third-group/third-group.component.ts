@@ -1,6 +1,9 @@
 import { Component, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { MembersManagerService, RichMember, RichUser } from '@perun-web-apps/perun/openapi';
 import { SelectionModel } from '@angular/cdk/collections';
+import { MembersService } from '@perun-web-apps/perun/services';
+import { MatDialog } from '@angular/material/dialog';
+import { TransferMemberDialogComponent } from '../transfer-member-dialog/transfer-member-dialog.component';
 
 @Component({
   selector: 'perun-web-apps-third-group',
@@ -9,7 +12,9 @@ import { SelectionModel } from '@angular/cdk/collections';
 })
 export class ThirdGroupComponent implements OnChanges {
 
-  constructor(private membersService: MembersManagerService) {
+  constructor(private membersService: MembersManagerService,
+              private membersService2: MembersService,
+              private dialog: MatDialog) {
   }
 
   @Input()
@@ -55,16 +60,20 @@ export class ThirdGroupComponent implements OnChanges {
     }
   }
 
-  onTransfer() {
-    for (const m of this.selection.selected) {
-      const tmp = this.membersKept.findIndex(obj => obj.id === m.id);
-      if (tmp !== undefined) {
-        this.membersKept[tmp] = m;
-      } else {
-        this.membersKept.push(m);
-      }
-    }
-    this.selection.clear();
+  // onTransfer() {
+  //   for (const m of this.selection.selected) {
+  //     const tmp = this.membersKept.findIndex(obj => obj.id === m.id);
+  //     if (tmp !== undefined) {
+  //       this.membersKept[tmp] = m;
+  //     } else {
+  //       this.membersKept.push(m);
+  //     }
+  //   }
+  //   this.selection.clear();
+  // }
+
+  onTransfer(member: RichMember) {
+    const dialogRef = this.dialog.open(TransferMemberDialogComponent, { data: { memberId: member.id } });
   }
 
 }

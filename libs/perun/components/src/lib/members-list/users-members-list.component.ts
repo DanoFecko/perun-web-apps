@@ -23,11 +23,11 @@ import {
 import { ChangeMemberStatusDialogComponent } from '../../../../../../apps/admin-gui/src/app/shared/components/dialogs/change-member-status-dialog/change-member-status-dialog.component';
 
 @Component({
-  selector: 'perun-web-apps-members-list',
-  templateUrl: './members-list.component.html',
-  styleUrls: ['./members-list.component.scss']
+  selector: 'perun-web-apps-users-members-list',
+  templateUrl: './users-members-list.component.html',
+  styleUrls: ['./users-members-list.component.scss']
 })
-export class MembersListComponent implements OnChanges, AfterViewInit {
+export class UsersMembersListComponent implements OnChanges, AfterViewInit {
 
   constructor(private dialog: MatDialog) { }
 
@@ -61,9 +61,12 @@ export class MembersListComponent implements OnChanges, AfterViewInit {
   @Output()
   updateTable = new EventEmitter<boolean>();
 
+  @Output()
+  transfer = new EventEmitter<RichMember>()
+
   exporting = false;
 
-  displayedColumns: string[] = ['checkbox', 'id', 'fullName', 'status', 'groupStatus', 'email'];
+  displayedColumns: string[] = ['id', 'fullName', 'transfer'];
   dataSource: MatTableDataSource<RichMember>;
   pageSizeOptions = TABLE_ITEMS_COUNT_OPTIONS;
 
