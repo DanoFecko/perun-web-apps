@@ -406,6 +406,11 @@
         "REMOVE": "Remove",
         "FILTER": "Filter by ID, name or type",
         "SUCCESS_REMOVED": "External source successfully removed: "
+      },
+      "SPONSORED_USER": {
+        "TITLE": "Sponsored users",
+        "CREATE": "Create",
+        "DELETE": "Delete"
       }
     },
     "APPLICATION": {
@@ -631,7 +636,9 @@
       "MANAGERS": "Managers",
       "APPLICATION_FORM": "Application form",
       "NOTIFICATIONS": "Notifications",
-      "EXTSOURCES": "External sources"
+      "EXTSOURCES": "External sources",
+      "SPONSORS": "Sponsors",
+      "SPONSORED_USERS": "Sponsored users"
     },
     "FACILITY": {
       "OVERVIEW": "Overview",
@@ -1516,6 +1523,30 @@
       "ERROR_LAST_NAME": "Last name cannot be empty or longer than 128 characters",
       "ERROR_FIRST_NAME": "First name cannot be empty or longer than 128 characters",
       "ERROR_LENGTH": "Length of field has to be less than 128 characters"
+    },
+    "CREATE_SPONSORED_USER": {
+      "TITLE": "Create sponsored user",
+      "FIRST_NAME": "First name",
+      "LAST_NAME": "Last name",
+      "TITLE_BEFORE": "Title before",
+      "TITLE_AFTER": "Title after",
+      "PASSWORD": "Password",
+      "NAMESPACE": "Namespace",
+      "SPONSOR_ID": "Sponsor ID",
+      "CANCEL": "Cancel",
+      "CREATE": "Create",
+      "LOGIN": "Login",
+      "EMAIL": "Email",
+      "SUCCESS": "Sponsored user created",
+      "EMAIL_ERROR": "Email is not valid"
+    },
+    "DELETE_SPONSORED_USER": {
+      "TITLE": "Delete sponsored member",
+      "DESCRIPTION": "",
+      "ASK": "",
+      "CANCEL": "",
+      "CONFIRM": "",
+      "SUCCESS": "Member successfully deleted"
     }
   },
   "MEMBERS_LIST": {
@@ -1524,7 +1555,9 @@
     "STATUS": "Status",
     "GROUP_STATUS": "Group status",
     "EMAIL": "Email",
-    "LOGINS": "Logins"
+    "LOGINS": "Logins",
+    "NO_MEMBERS_ALERT": "No members present",
+    "NO_FILTER_RESULTS_ALERT": "There are no members matching your query"
   },
   "MEMBERS_CANDIDATES_LIST": {
     "STATUS": "Status",
@@ -1777,7 +1810,8 @@
     "SELF": "Self",
     "FACILITYADMIN": "Facility admin",
     "GROUPADMIN": "Group admin",
-    "RESOURCEADMIN": "Resource admin"
+    "RESOURCEADMIN": "Resource admin",
+    "SPONSOR": "Sponsor"
   },
   "SHARED_LIB": {
     "PERUN": {

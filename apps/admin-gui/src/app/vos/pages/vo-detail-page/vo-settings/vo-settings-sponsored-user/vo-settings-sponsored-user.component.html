@@ -1,0 +1,18 @@
+<div>
+  <perun-web-apps-refresh-button (refresh)="refresh()"></perun-web-apps-refresh-button>
+  <h1 class="page-subtitle">{{'VO_DETAIL.SETTINGS.SPONSORED_USER.TITLE' | translate}}</h1>
+  <button mat-flat-button color="accent"
+          (click)="onCreate()">{{'VO_DETAIL.SETTINGS.SPONSORED_USER.CREATE' | translate}}</button>
+  <button mat-flat-button class="ml-2" [disabled]="selection.selected.length === 0" color="warn"
+          (click)="onDelete()">{{'VO_DETAIL.SETTINGS.SPONSORED_USER.DELETE' | translate}}</button>
+  <perun-web-apps-immediate-filter (filter)="applyFilter($event)"
+                                   [placeholder]="'VO_DETAIL.SETTINGS.EXT_SOURCES.FILTER'"></perun-web-apps-immediate-filter>
+  <mat-spinner class="ml-auto mr-auto" *ngIf="loading"></mat-spinner>
+  <app-members-list
+      *ngIf="!loading"
+      [members]="this.members"
+      [selection]="this.selection"
+      [searchString]="this.searchString"
+      [pageSize]="this.pageSize"
+  ></app-members-list>
+</div>

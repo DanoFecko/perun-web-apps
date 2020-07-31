@@ -17,16 +17,16 @@ import { HttpClient, HttpHeaders, HttpParams,
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
-import { FacilityState } from '../model/facilityState';
-import { PerunException } from '../model/perunException';
-import { ResourceState } from '../model/resourceState';
-import { ServiceState } from '../model/serviceState';
-import { Task } from '../model/task';
-import { TaskAndDestinationIdObject } from '../model/taskAndDestinationIdObject';
-import { TaskAndDestinationNameObject } from '../model/taskAndDestinationNameObject';
-import { TaskIdObject } from '../model/taskIdObject';
-import { TaskResult } from '../model/taskResult';
-import { TaskResultIdObject } from '../model/taskResultIdObject';
+import { FacilityState } from '../model/models';
+import { PerunException } from '../model/models';
+import { ResourceState } from '../model/models';
+import { ServiceState } from '../model/models';
+import { Task } from '../model/models';
+import { TaskAndDestinationIdObject } from '../model/models';
+import { TaskAndDestinationNameObject } from '../model/models';
+import { TaskIdObject } from '../model/models';
+import { TaskResult } from '../model/models';
+import { TaskResultIdObject } from '../model/models';
 
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
 import { Configuration }                                     from '../configuration';
@@ -58,21 +58,60 @@ export class TasksManagerService {
 
 
 
+    private addToHttpParams(httpParams: HttpParams, value: any, key?: string): HttpParams {
+        if (typeof value === "object" && value instanceof Date === false) {
+            httpParams = this.addToHttpParamsRecursive(httpParams, value);
+        } else {
+            httpParams = this.addToHttpParamsRecursive(httpParams, value, key);
+        }
+        return httpParams;
+    }
+
+    private addToHttpParamsRecursive(httpParams: HttpParams, value?: any, key?: string): HttpParams {
+        if (value == null) {
+            return httpParams;
+        }
+
+        if (typeof value === "object") {
+            if (Array.isArray(value)) {
+                (value as any[]).forEach( elem => httpParams = this.addToHttpParamsRecursive(httpParams, elem, key));
+            } else if (value instanceof Date) {
+                if (key != null) {
+                    httpParams = httpParams.append(key,
+                        (value as Date).toISOString().substr(0, 10));
+                } else {
+                   throw Error("key may not be null if value is Date");
+                }
+            } else {
+                Object.keys(value).forEach( k => httpParams = this.addToHttpParamsRecursive(
+                    httpParams, value[k], key != null ? `${key}.${k}` : k));
+            }
+        } else if (key != null) {
+            httpParams = httpParams.append(key, value);
+        } else {
+            throw Error("key may not be null if value is not object or array");
+        }
+        return httpParams;
+    }
+
     /**
      * Returns the count of all tasks.
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public countTasks(observe?: 'body', reportProgress?: boolean): Observable<number>;
-    public countTasks(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<number>>;
-    public countTasks(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<number>>;
-    public countTasks(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public countTasks(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<number>;
+    public countTasks(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<number>>;
+    public countTasks(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<number>>;
+    public countTasks(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -86,18 +125,27 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<number>(`${this.configuration.basePath}/json/tasksManager/countTasks`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -112,10 +160,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteTask(taskIdObject: TaskIdObject, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteTask(taskIdObject: TaskIdObject, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteTask(taskIdObject: TaskIdObject, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteTask(taskIdObject: TaskIdObject, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteTask(taskIdObject: TaskIdObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteTask(taskIdObject: TaskIdObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteTask(taskIdObject: TaskIdObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteTask(taskIdObject: TaskIdObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (taskIdObject === null || taskIdObject === undefined) {
             throw new Error('Required parameter taskIdObject was null or undefined when calling deleteTask.');
         }
@@ -123,8 +171,11 @@ export class TasksManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -138,11 +189,14 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -157,9 +211,15 @@ export class TasksManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/tasksManager/deleteTask`,
             taskIdObject,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -174,10 +234,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteTaskResultById(taskResultIdObject: TaskResultIdObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (taskResultIdObject === null || taskResultIdObject === undefined) {
             throw new Error('Required parameter taskResultIdObject was null or undefined when calling deleteTaskResultById.');
         }
@@ -185,8 +245,11 @@ export class TasksManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -200,11 +263,14 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -219,9 +285,15 @@ export class TasksManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/tasksManager/deleteTaskResultById`,
             taskResultIdObject,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -236,10 +308,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteTaskResultsIds(taskAndDestinationIdObject: TaskAndDestinationIdObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (taskAndDestinationIdObject === null || taskAndDestinationIdObject === undefined) {
             throw new Error('Required parameter taskAndDestinationIdObject was null or undefined when calling deleteTaskResultsIds.');
         }
@@ -247,8 +319,11 @@ export class TasksManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -262,11 +337,14 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -281,9 +359,15 @@ export class TasksManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/tasksManager/deleteTaskResults/id`,
             taskAndDestinationIdObject,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -298,10 +382,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteTaskResultsNames(taskAndDestinationNameObject: TaskAndDestinationNameObject, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (taskAndDestinationNameObject === null || taskAndDestinationNameObject === undefined) {
             throw new Error('Required parameter taskAndDestinationNameObject was null or undefined when calling deleteTaskResultsNames.');
         }
@@ -309,8 +393,11 @@ export class TasksManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -324,11 +411,14 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -343,9 +433,15 @@ export class TasksManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/tasksManager/deleteTaskResults/name`,
             taskAndDestinationNameObject,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -360,21 +456,25 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllFacilitiesStates(vo?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<FacilityState>>;
-    public getAllFacilitiesStates(vo?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<FacilityState>>>;
-    public getAllFacilitiesStates(vo?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<FacilityState>>>;
-    public getAllFacilitiesStates(vo?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllFacilitiesStates(vo?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<FacilityState>>;
+    public getAllFacilitiesStates(vo?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<FacilityState>>>;
+    public getAllFacilitiesStates(vo?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<FacilityState>>>;
+    public getAllFacilitiesStates(vo?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -388,19 +488,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<FacilityState>>(`${this.configuration.basePath}/json/tasksManager/getAllFacilitiesStates`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -415,24 +524,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllResourcesState(voId: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ResourceState>>;
-    public getAllResourcesState(voId: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ResourceState>>>;
-    public getAllResourcesState(voId: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ResourceState>>>;
-    public getAllResourcesState(voId: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllResourcesState(voId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ResourceState>>;
+    public getAllResourcesState(voId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ResourceState>>>;
+    public getAllResourcesState(voId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ResourceState>>>;
+    public getAllResourcesState(voId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (voId === null || voId === undefined) {
             throw new Error('Required parameter voId was null or undefined when calling getAllResourcesState.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (voId !== undefined && voId !== null) {
-            queryParameters = queryParameters.set('voId', <any>voId);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>voId, 'voId');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -446,19 +559,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ResourceState>>(`${this.configuration.basePath}/json/tasksManager/getAllResourcesState`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -473,24 +595,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityServicesState(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ServiceState>>;
-    public getFacilityServicesState(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ServiceState>>>;
-    public getFacilityServicesState(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ServiceState>>>;
-    public getFacilityServicesState(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityServicesState(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ServiceState>>;
+    public getFacilityServicesState(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ServiceState>>>;
+    public getFacilityServicesState(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ServiceState>>>;
+    public getFacilityServicesState(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityServicesState.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -504,19 +630,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ServiceState>>(`${this.configuration.basePath}/json/tasksManager/getFacilityServicesState`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -531,24 +666,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityState(facility: number, observe?: 'body', reportProgress?: boolean): Observable<FacilityState>;
-    public getFacilityState(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<FacilityState>>;
-    public getFacilityState(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<FacilityState>>;
-    public getFacilityState(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityState(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<FacilityState>;
+    public getFacilityState(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<FacilityState>>;
+    public getFacilityState(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<FacilityState>>;
+    public getFacilityState(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityState.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -562,19 +701,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<FacilityState>(`${this.configuration.basePath}/json/tasksManager/getFacilityState`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -590,10 +738,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTask(service: number, facility: number, observe?: 'body', reportProgress?: boolean): Observable<Task>;
-    public getTask(service: number, facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Task>>;
-    public getTask(service: number, facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Task>>;
-    public getTask(service: number, facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTask(service: number, facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Task>;
+    public getTask(service: number, facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Task>>;
+    public getTask(service: number, facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Task>>;
+    public getTask(service: number, facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (service === null || service === undefined) {
             throw new Error('Required parameter service was null or undefined when calling getTask.');
         }
@@ -603,17 +751,22 @@ export class TasksManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -627,19 +780,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Task>(`${this.configuration.basePath}/json/tasksManager/getTask`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -654,24 +816,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskById(id: number, observe?: 'body', reportProgress?: boolean): Observable<Task>;
-    public getTaskById(id: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Task>>;
-    public getTaskById(id: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Task>>;
-    public getTaskById(id: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskById(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Task>;
+    public getTaskById(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Task>>;
+    public getTaskById(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Task>>;
+    public getTaskById(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling getTaskById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (id !== undefined && id !== null) {
-            queryParameters = queryParameters.set('id', <any>id);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>id, 'id');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -685,19 +851,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Task>(`${this.configuration.basePath}/json/tasksManager/getTaskById`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -712,24 +887,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultById(taskResult: number, observe?: 'body', reportProgress?: boolean): Observable<TaskResult>;
-    public getTaskResultById(taskResult: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<TaskResult>>;
-    public getTaskResultById(taskResult: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<TaskResult>>;
-    public getTaskResultById(taskResult: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultById(taskResult: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<TaskResult>;
+    public getTaskResultById(taskResult: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<TaskResult>>;
+    public getTaskResultById(taskResult: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<TaskResult>>;
+    public getTaskResultById(taskResult: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (taskResult === null || taskResult === undefined) {
             throw new Error('Required parameter taskResult was null or undefined when calling getTaskResultById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (taskResult !== undefined && taskResult !== null) {
-            queryParameters = queryParameters.set('taskResult', <any>taskResult);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>taskResult, 'taskResult');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -743,19 +922,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<TaskResult>(`${this.configuration.basePath}/json/tasksManager/getTaskResultById`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -769,16 +957,19 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResults(observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResults(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResults(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResults(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResults(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResults(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResults(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResults(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -792,18 +983,27 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResults`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -818,24 +1018,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultsByTask(task: number, observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResultsByTask(task: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResultsByTask(task: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResultsByTask(task: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultsByTask(task: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResultsByTask(task: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResultsByTask(task: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResultsByTask(task: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (task === null || task === undefined) {
             throw new Error('Required parameter task was null or undefined when calling getTaskResultsByTask.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (task !== undefined && task !== null) {
-            queryParameters = queryParameters.set('task', <any>task);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>task, 'task');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -849,19 +1053,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResultsByTask`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -876,10 +1089,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResultsForDestinations(destinations: Array<string>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResultsForDestinations(destinations: Array<string>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResultsForDestinations(destinations: Array<string>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (destinations === null || destinations === undefined) {
             throw new Error('Required parameter destinations was null or undefined when calling getTaskResultsForDestinations.');
         }
@@ -887,15 +1100,19 @@ export class TasksManagerService {
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (destinations) {
             destinations.forEach((element) => {
-                queryParameters = queryParameters.append('destinations[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'destinations[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -909,19 +1126,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResultsForDestinations`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -936,24 +1162,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultsForGUIByTask(task: number, observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResultsForGUIByTask(task: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTask(task: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTask(task: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultsForGUIByTask(task: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResultsForGUIByTask(task: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTask(task: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTask(task: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (task === null || task === undefined) {
             throw new Error('Required parameter task was null or undefined when calling getTaskResultsForGUIByTask.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (task !== undefined && task !== null) {
-            queryParameters = queryParameters.set('task', <any>task);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>task, 'task');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -967,19 +1197,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResultsForGUIByTask`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -995,10 +1234,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTaskAndDestination(task: number, destination: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (task === null || task === undefined) {
             throw new Error('Required parameter task was null or undefined when calling getTaskResultsForGUIByTaskAndDestination.');
         }
@@ -1008,17 +1247,22 @@ export class TasksManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (task !== undefined && task !== null) {
-            queryParameters = queryParameters.set('task', <any>task);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>task, 'task');
         }
         if (destination !== undefined && destination !== null) {
-            queryParameters = queryParameters.set('destination', <any>destination);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destination, 'destination');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1032,19 +1276,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResultsForGUIByTaskAndDestination`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1059,24 +1312,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'body', reportProgress?: boolean): Observable<Array<TaskResult>>;
-    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<TaskResult>>>;
-    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<TaskResult>>;
+    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<TaskResult>>>;
+    public getTaskResultsForGUIByTaskOnlyNewest(task: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (task === null || task === undefined) {
             throw new Error('Required parameter task was null or undefined when calling getTaskResultsForGUIByTaskOnlyNewest.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (task !== undefined && task !== null) {
-            queryParameters = queryParameters.set('task', <any>task);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>task, 'task');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1090,19 +1347,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<TaskResult>>(`${this.configuration.basePath}/json/tasksManager/getTaskResultsForGUIByTaskOnlyNewest`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1118,10 +1384,10 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public isThereSuchTask(service: number, facility: number, observe?: 'body', reportProgress?: boolean): Observable<number>;
-    public isThereSuchTask(service: number, facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<number>>;
-    public isThereSuchTask(service: number, facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<number>>;
-    public isThereSuchTask(service: number, facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public isThereSuchTask(service: number, facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<number>;
+    public isThereSuchTask(service: number, facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<number>>;
+    public isThereSuchTask(service: number, facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<number>>;
+    public isThereSuchTask(service: number, facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (service === null || service === undefined) {
             throw new Error('Required parameter service was null or undefined when calling isThereSuchTask.');
         }
@@ -1131,17 +1397,22 @@ export class TasksManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1155,19 +1426,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<number>(`${this.configuration.basePath}/json/tasksManager/isThereSuchTask`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1181,16 +1461,19 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public listAllTasks(observe?: 'body', reportProgress?: boolean): Observable<Array<Task>>;
-    public listAllTasks(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Task>>>;
-    public listAllTasks(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Task>>>;
-    public listAllTasks(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public listAllTasks(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Task>>;
+    public listAllTasks(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Task>>>;
+    public listAllTasks(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Task>>>;
+    public listAllTasks(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1204,18 +1487,27 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Task>>(`${this.configuration.basePath}/json/tasksManager/listAllTasks`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1230,24 +1522,28 @@ export class TasksManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public listAllTasksForFacility(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Task>>;
-    public listAllTasksForFacility(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Task>>>;
-    public listAllTasksForFacility(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Task>>>;
-    public listAllTasksForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public listAllTasksForFacility(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Task>>;
+    public listAllTasksForFacility(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Task>>>;
+    public listAllTasksForFacility(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Task>>>;
+    public listAllTasksForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling listAllTasksForFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1261,19 +1557,28 @@ export class TasksManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Task>>(`${this.configuration.basePath}/json/tasksManager/listAllTasksForFacility`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,

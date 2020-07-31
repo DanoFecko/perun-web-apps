@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { PerunBean } from './perunBean';
+import { CategoryAllOf } from './categoryAllOf';
 
 
 export interface Category extends PerunBean { 

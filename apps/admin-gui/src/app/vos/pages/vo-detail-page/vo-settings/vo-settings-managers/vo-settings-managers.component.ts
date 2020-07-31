@@ -21,7 +21,7 @@ export class VoSettingsManagersComponent implements OnInit {
 
   vo: Vo;
 
-  availableRoles: Role[] = [ Role.VOADMIN, Role.VOOBSERVER, Role.TOPGROUPCREATOR ];
+  availableRoles: Role[] = [ Role.VOADMIN, Role.VOOBSERVER, Role.TOPGROUPCREATOR, Role.SPONSOR ];
 
   selected = 'user';
 

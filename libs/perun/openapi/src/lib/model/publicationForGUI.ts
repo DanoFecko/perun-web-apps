@@ -12,6 +12,7 @@
 import { ThanksForGUI } from './thanksForGUI';
 import { Author } from './author';
 import { Publication } from './publication';
+import { PublicationForGUIAllOf } from './publicationForGUIAllOf';
 
 
 export interface PublicationForGUI extends Publication { 

@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Auditable } from './auditable';
+import { HostAllOf } from './hostAllOf';
 
 
 export interface Host extends Auditable { 

@@ -496,6 +496,7 @@ export class SideMenuItemService {
     // Settings
     const extSourcesAuth = this.authResolver.isAuthorized('getVoExtSources_Vo_policy', [vo]);
     const managersAuth = this.authResolver.isAuthorized('getRichAdmins_Vo_String_List<String>_boolean_boolean_policy', [vo]);
+    const sponsoredUsersAuth = this.authResolver.isAuthorized('getSponsoredMembers_Vo_policy', [vo]);
     const adminOrObserver = this.authResolver.isThisVoAdminOrObserver(vo.id);
 
     if (managersAuth || extSourcesAuth || adminOrObserver) {
@@ -543,6 +544,15 @@ export class SideMenuItemService {
           label: 'MENU_ITEMS.VO.EXTSOURCES',
           url: [`/organizations/${vo.id}/settings/extsources`],
           activatedRegex: '/organizations/\\d+/settings/extsources$'
+        });
+      }
+
+      // Sponsored users
+      if(sponsoredUsersAuth){
+        children.push({
+          label: 'MENU_ITEMS.VO.SPONSORED_USERS',
+          url: [`/organizations/${vo.id}/settings/sponsoredUsers`],
+          activatedRegex: '/organizations/\\d+/settings/sponsoredUsers$'
         });
       }
 

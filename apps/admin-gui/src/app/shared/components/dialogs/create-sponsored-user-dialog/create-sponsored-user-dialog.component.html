@@ -1,0 +1,88 @@
+<div class="{{theme}}">
+  <h1 mat-dialog-title>{{'DIALOGS.CREATE_SPONSORED_USER.TITLE' | translate}}</h1>
+
+  <div mat-dialog-content class="dialog-container">
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.firstName" required
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.FIRST_NAME' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.lastName" required
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.LAST_NAME' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.titleBefore"
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.TITLE_BEFORE' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.titleAfter"
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.TITLE_AFTER' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.login" required
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.LOGIN' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.password" required
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.PASSWORD' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <!--        <mat-form-field class="">-->
+    <!--          <label>-->
+    <!--            <input matInput [(ngModel)]="this.sponsorId" placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.SPONSOR_ID' | translate}}">-->
+    <!--          </label>-->
+    <!--        </mat-form-field>-->
+
+    <mat-form-field class="">
+      <label>
+        <input matInput [(ngModel)]="this.namespace" required
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.NAMESPACE' | translate}}">
+      </label>
+    </mat-form-field>
+
+    <mat-form-field class="">
+      <label>
+        <input matInput type="email" pattern="[a-zA-Z0-9.-_]{1,}@[a-zA-Z.-]{2,}[.]{1}[a-zA-Z]{2,}"
+               [(ngModel)]="this.email" required #emailcontroll="ngModel"
+               placeholder="{{'DIALOGS.CREATE_SPONSORED_USER.EMAIL' | translate}}">
+      </label>
+      <mat-error *ngIf="emailcontroll.errors?.pattern">{{'DIALOGS.CREATE_SPONSORED_USER.EMAIL_ERROR' | translate}}</mat-error>
+    </mat-form-field>
+
+  </div>
+
+  <div mat-dialog-actions>
+    <button
+        mat-flat-button
+        class="ml-auto"
+        (click)="onCancel()">
+      {{'DIALOGS.CREATE_SPONSORED_USER.CANCEL' | translate}}
+    </button>
+    <button
+        mat-flat-button
+        class="ml-2"
+        color="accent"
+        [disabled]="!((this.firstName) && (this.lastName) && (this.login) && (this.password) && (this.namespace) && (this.email) && !emailcontroll.errors?.pattern)"
+        (click)="onConfirm()">
+      {{'DIALOGS.CREATE_SPONSORED_USER.CREATE' | translate}}
+    </button>
+  </div>
+</div>

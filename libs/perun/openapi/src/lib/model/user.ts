@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Auditable } from './auditable';
+import { UserAllOf } from './userAllOf';
 
 
 export interface User extends Auditable { 

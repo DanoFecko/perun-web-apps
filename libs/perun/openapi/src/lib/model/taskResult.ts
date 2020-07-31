@@ -11,6 +11,7 @@
  */
 import { Destination } from './destination';
 import { PerunBean } from './perunBean';
+import { TaskResultAllOf } from './taskResultAllOf';
 import { Service } from './service';
 import { TaskResultStatus } from './taskResultStatus';
 

@@ -191,6 +191,8 @@ import { DisconnectIdentity } from './components/dialogs/disconnect-identity/dis
 import { UserSettingsAssociatedUsersComponent } from './components/user-detail-page/user-settings/user-settings-associated-users/user-settings-associated-users.component';
 import { EditFacilityResourceGroupVoDialogComponent } from './components/dialogs/edit-facility-resource-group-vo-dialog/edit-facility-resource-group-vo-dialog.component';
 import { EditUserDialogComponent } from './components/dialogs/edit-user-dialog/edit-user-dialog.component';
+import { CreateSponsoredUserDialogComponent } from './components/dialogs/create-sponsored-user-dialog/create-sponsored-user-dialog.component';
+import { DeleteSponsoredUserDialogComponent } from './components/dialogs/delete-sponsored-user-dialog/delete-sponsored-user-dialog.component';
 
 @NgModule({
   imports: [
@@ -454,7 +456,9 @@ import { EditUserDialogComponent } from './components/dialogs/edit-user-dialog/e
     DisconnectIdentity,
     UserSettingsAssociatedUsersComponent,
     EditFacilityResourceGroupVoDialogComponent,
-    EditUserDialogComponent
+    EditUserDialogComponent,
+    CreateSponsoredUserDialogComponent,
+    DeleteSponsoredUserDialogComponent
   ],
   providers: [
     AnyToStringPipe,

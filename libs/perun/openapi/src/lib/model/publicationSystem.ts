@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { PerunBean } from './perunBean';
+import { PublicationSystemAllOf } from './publicationSystemAllOf';
 
 
 export interface PublicationSystem extends PerunBean { 

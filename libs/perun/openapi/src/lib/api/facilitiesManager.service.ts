@@ -17,28 +17,28 @@ import { HttpClient, HttpHeaders, HttpParams,
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
-import { BanOnFacility } from '../model/banOnFacility';
-import { ContactGroup } from '../model/contactGroup';
-import { EnrichedHost } from '../model/enrichedHost';
-import { Facility } from '../model/facility';
-import { Group } from '../model/group';
-import { Host } from '../model/host';
-import { InputAddFacilityContact } from '../model/inputAddFacilityContact';
-import { InputAddFacilityContacts } from '../model/inputAddFacilityContacts';
-import { InputRemoveFacilityContact } from '../model/inputRemoveFacilityContact';
-import { InputRemoveFacilityContacts } from '../model/inputRemoveFacilityContacts';
-import { InputSetBanForUserOnFacility } from '../model/inputSetBanForUserOnFacility';
-import { InputUpdateBanForFacility } from '../model/inputUpdateBanForFacility';
-import { InputUpdateFacility } from '../model/inputUpdateFacility';
-import { Owner } from '../model/owner';
-import { PerunException } from '../model/perunException';
-import { Resource } from '../model/resource';
-import { RichFacility } from '../model/richFacility';
-import { RichGroup } from '../model/richGroup';
-import { RichResource } from '../model/richResource';
-import { SecurityTeam } from '../model/securityTeam';
-import { User } from '../model/user';
-import { Vo } from '../model/vo';
+import { BanOnFacility } from '../model/models';
+import { ContactGroup } from '../model/models';
+import { EnrichedHost } from '../model/models';
+import { Facility } from '../model/models';
+import { Group } from '../model/models';
+import { Host } from '../model/models';
+import { InputAddFacilityContact } from '../model/models';
+import { InputAddFacilityContacts } from '../model/models';
+import { InputRemoveFacilityContact } from '../model/models';
+import { InputRemoveFacilityContacts } from '../model/models';
+import { InputSetBanForUserOnFacility } from '../model/models';
+import { InputUpdateBanForFacility } from '../model/models';
+import { InputUpdateFacility } from '../model/models';
+import { Owner } from '../model/models';
+import { PerunException } from '../model/models';
+import { Resource } from '../model/models';
+import { RichFacility } from '../model/models';
+import { RichGroup } from '../model/models';
+import { RichResource } from '../model/models';
+import { SecurityTeam } from '../model/models';
+import { User } from '../model/models';
+import { Vo } from '../model/models';
 
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
 import { Configuration }                                     from '../configuration';
@@ -70,6 +70,42 @@ export class FacilitiesManagerService {
 
 
 
+    private addToHttpParams(httpParams: HttpParams, value: any, key?: string): HttpParams {
+        if (typeof value === "object" && value instanceof Date === false) {
+            httpParams = this.addToHttpParamsRecursive(httpParams, value);
+        } else {
+            httpParams = this.addToHttpParamsRecursive(httpParams, value, key);
+        }
+        return httpParams;
+    }
+
+    private addToHttpParamsRecursive(httpParams: HttpParams, value?: any, key?: string): HttpParams {
+        if (value == null) {
+            return httpParams;
+        }
+
+        if (typeof value === "object") {
+            if (Array.isArray(value)) {
+                (value as any[]).forEach( elem => httpParams = this.addToHttpParamsRecursive(httpParams, elem, key));
+            } else if (value instanceof Date) {
+                if (key != null) {
+                    httpParams = httpParams.append(key,
+                        (value as Date).toISOString().substr(0, 10));
+                } else {
+                   throw Error("key may not be null if value is Date");
+                }
+            } else {
+                Object.keys(value).forEach( k => httpParams = this.addToHttpParamsRecursive(
+                    httpParams, value[k], key != null ? `${key}.${k}` : k));
+            }
+        } else if (key != null) {
+            httpParams = httpParams.append(key, value);
+        } else {
+            throw Error("key may not be null if value is not object or array");
+        }
+        return httpParams;
+    }
+
     /**
      * Adds a group as a Facility admin.
      * @param facility id of Facility
@@ -77,10 +113,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityAdminGroup(facility: number, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityAdminGroup.');
         }
@@ -90,17 +126,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (authorizedGroup !== undefined && authorizedGroup !== null) {
-            queryParameters = queryParameters.set('authorizedGroup', <any>authorizedGroup);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>authorizedGroup, 'authorizedGroup');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -114,20 +155,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addAdmin/group`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -143,10 +193,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityAdminGroupByFacilityName.');
         }
@@ -156,17 +206,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (authorizedGroup !== undefined && authorizedGroup !== null) {
-            queryParameters = queryParameters.set('authorizedGroup', <any>authorizedGroup);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>authorizedGroup, 'authorizedGroup');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -180,20 +235,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addAdmin/group/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -209,10 +273,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityAdminUser(facility: number, user: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityAdminUser(facility: number, user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityAdminUser(facility: number, user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityAdminUser(facility: number, user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityAdminUser(facility: number, user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityAdminUser(facility: number, user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityAdminUser(facility: number, user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityAdminUser(facility: number, user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityAdminUser.');
         }
@@ -222,17 +286,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -246,20 +315,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addAdmin/user`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -275,10 +353,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityAdminUserByFacilityName(facility: string, user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityAdminUserByFacilityName.');
         }
@@ -288,17 +366,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -312,20 +395,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addAdmin/user/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -340,10 +432,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityContact(inputAddFacilityContact: InputAddFacilityContact, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputAddFacilityContact === null || inputAddFacilityContact === undefined) {
             throw new Error('Required parameter inputAddFacilityContact was null or undefined when calling addFacilityContact.');
         }
@@ -351,8 +443,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -366,11 +461,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -385,9 +483,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/facilitiesManager/addFacilityContact`,
             inputAddFacilityContact,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -402,10 +506,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityContacts(inputAddFacilityContacts: InputAddFacilityContacts, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputAddFacilityContacts === null || inputAddFacilityContacts === undefined) {
             throw new Error('Required parameter inputAddFacilityContacts was null or undefined when calling addFacilityContacts.');
         }
@@ -413,8 +517,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -428,11 +535,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -447,9 +557,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/facilitiesManager/addFacilityContacts`,
             inputAddFacilityContacts,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -465,10 +581,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityOwner(facility: number, owner: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityOwner(facility: number, owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityOwner(facility: number, owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityOwner(facility: number, owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityOwner(facility: number, owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityOwner(facility: number, owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityOwner(facility: number, owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityOwner(facility: number, owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityOwner.');
         }
@@ -478,17 +594,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -502,20 +623,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addOwner`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -531,10 +661,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityOwnerByFacilityName(facility: string, owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityOwnerByFacilityName.');
         }
@@ -544,17 +674,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -568,20 +703,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addOwner/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -597,10 +741,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityOwnerByFacilityNameOwnerName.');
         }
@@ -610,17 +754,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -634,20 +783,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addOwner/f-o-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -663,10 +821,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public addFacilityOwnerByOwnerName(facility: number, owner: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addFacilityOwnerByOwnerName.');
         }
@@ -676,17 +834,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -700,20 +863,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addOwner/o-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -729,10 +901,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addHost(facility: number, hostname: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public addHost(facility: number, hostname: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public addHost(facility: number, hostname: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public addHost(facility: number, hostname: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addHost(facility: number, hostname: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public addHost(facility: number, hostname: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public addHost(facility: number, hostname: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public addHost(facility: number, hostname: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addHost.');
         }
@@ -742,17 +914,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hostname !== undefined && hostname !== null) {
-            queryParameters = queryParameters.set('hostname', <any>hostname);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>hostname, 'hostname');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -766,20 +943,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Host>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addHost`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -795,10 +981,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addHostByFacilityName(facility: string, hostname: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public addHostByFacilityName(facility: string, hostname: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public addHostByFacilityName(facility: string, hostname: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public addHostByFacilityName(facility: string, hostname: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addHostByFacilityName(facility: string, hostname: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public addHostByFacilityName(facility: string, hostname: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public addHostByFacilityName(facility: string, hostname: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public addHostByFacilityName(facility: string, hostname: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addHostByFacilityName.');
         }
@@ -808,17 +994,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hostname !== undefined && hostname !== null) {
-            queryParameters = queryParameters.set('hostname', <any>hostname);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>hostname, 'hostname');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -832,20 +1023,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Host>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addHost/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -861,10 +1061,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addHosts(facility: number, hostnames: Array<string>, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public addHosts(facility: number, hostnames: Array<string>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public addHosts(facility: number, hostnames: Array<string>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public addHosts(facility: number, hostnames: Array<string>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addHosts(facility: number, hostnames: Array<string>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public addHosts(facility: number, hostnames: Array<string>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public addHosts(facility: number, hostnames: Array<string>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public addHosts(facility: number, hostnames: Array<string>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addHosts.');
         }
@@ -874,19 +1074,24 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hostnames) {
             hostnames.forEach((element) => {
-                queryParameters = queryParameters.append('hostnames[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'hostnames[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -900,20 +1105,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Host>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addHosts`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -929,10 +1143,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public addHostsByFacilityName(facility: string, hostnames: Array<string>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling addHostsByFacilityName.');
         }
@@ -942,19 +1156,24 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hostnames) {
             hostnames.forEach((element) => {
-                queryParameters = queryParameters.append('hostnames[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'hostnames[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -968,20 +1187,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Host>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/addHosts/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -997,10 +1225,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public assignSecurityTeam(facility: number, securityTeam: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public assignSecurityTeam(facility: number, securityTeam: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public assignSecurityTeam(facility: number, securityTeam: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling assignSecurityTeam.');
         }
@@ -1010,17 +1238,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (securityTeam !== undefined && securityTeam !== null) {
-            queryParameters = queryParameters.set('securityTeam', <any>securityTeam);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>securityTeam, 'securityTeam');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1034,20 +1267,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/assignSecurityTeam`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1063,10 +1305,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public assignSecurityTeamByFacilityName(facility: string, securityTeam: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling assignSecurityTeamByFacilityName.');
         }
@@ -1076,17 +1318,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (securityTeam !== undefined && securityTeam !== null) {
-            queryParameters = queryParameters.set('securityTeam', <any>securityTeam);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>securityTeam, 'securityTeam');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1100,20 +1347,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/assignSecurityTeam/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1129,10 +1385,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyAttributes(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyAttributes(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyAttributes(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyAttributes.');
         }
@@ -1142,17 +1398,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1166,20 +1427,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyAttributes`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1195,10 +1465,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyAttributesByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyAttributesByDestinationName.');
         }
@@ -1208,17 +1478,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1232,20 +1507,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyAttributes/dest-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1261,10 +1545,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyAttributesBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyAttributesBySourceDestinationNames.');
         }
@@ -1274,17 +1558,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1298,20 +1587,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyAttributes/src-dest-names`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1327,10 +1625,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyAttributesBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyAttributesBySourceName.');
         }
@@ -1340,17 +1638,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1364,20 +1667,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyAttributes/src-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1393,10 +1705,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyManagers(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyManagers(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyManagers(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyManagers(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyManagers(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyManagers(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyManagers(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyManagers(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyManagers.');
         }
@@ -1406,17 +1718,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1430,20 +1747,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyManagers`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1459,10 +1785,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyManagersByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyManagersByDestinationName.');
         }
@@ -1472,17 +1798,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1496,20 +1827,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyManagers/dest-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1525,10 +1865,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyManagersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyManagersBySourceDestinationNames.');
         }
@@ -1538,17 +1878,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1562,20 +1907,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyManagers/src-dest-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1591,10 +1945,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyManagersBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyManagersBySourceName.');
         }
@@ -1604,17 +1958,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1628,20 +1987,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyManagers/src-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1657,10 +2025,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyOwners(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyOwners(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyOwners(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyOwners(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyOwners(srcFacility: number, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyOwners(srcFacility: number, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyOwners(srcFacility: number, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyOwners(srcFacility: number, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyOwners.');
         }
@@ -1670,17 +2038,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1694,20 +2067,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyOwners`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1723,10 +2105,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyOwnersByDestinationName(srcFacility: number, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacility === null || srcFacility === undefined) {
             throw new Error('Required parameter srcFacility was null or undefined when calling copyOwnersByDestinationName.');
         }
@@ -1736,17 +2118,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacility !== undefined && srcFacility !== null) {
-            queryParameters = queryParameters.set('srcFacility', <any>srcFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacility, 'srcFacility');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1760,20 +2147,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyOwners/dest-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1789,10 +2185,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyOwnersBySourceDestinationNames(srcFacilityName: string, destFacilityName: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyOwnersBySourceDestinationNames.');
         }
@@ -1802,17 +2198,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacilityName !== undefined && destFacilityName !== null) {
-            queryParameters = queryParameters.set('destFacilityName', <any>destFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacilityName, 'destFacilityName');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1826,20 +2227,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyOwners/src-dest-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1855,10 +2265,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public copyOwnersBySourceName(srcFacilityName: string, destFacility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (srcFacilityName === null || srcFacilityName === undefined) {
             throw new Error('Required parameter srcFacilityName was null or undefined when calling copyOwnersBySourceName.');
         }
@@ -1868,17 +2278,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (srcFacilityName !== undefined && srcFacilityName !== null) {
-            queryParameters = queryParameters.set('srcFacilityName', <any>srcFacilityName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>srcFacilityName, 'srcFacilityName');
         }
         if (destFacility !== undefined && destFacility !== null) {
-            queryParameters = queryParameters.set('destFacility', <any>destFacility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destFacility, 'destFacility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1892,20 +2307,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/copyOwners/src-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1921,27 +2345,32 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public createFacility(name: string, description?: string, observe?: 'body', reportProgress?: boolean): Observable<Facility>;
-    public createFacility(name: string, description?: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Facility>>;
-    public createFacility(name: string, description?: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Facility>>;
-    public createFacility(name: string, description?: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public createFacility(name: string, description?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Facility>;
+    public createFacility(name: string, description?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Facility>>;
+    public createFacility(name: string, description?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Facility>>;
+    public createFacility(name: string, description?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (name === null || name === undefined) {
             throw new Error('Required parameter name was null or undefined when calling createFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (name !== undefined && name !== null) {
-            queryParameters = queryParameters.set('name', <any>name);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>name, 'name');
         }
         if (description !== undefined && description !== null) {
-            queryParameters = queryParameters.set('description', <any>description);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>description, 'description');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -1955,20 +2384,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Facility>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/createFacility`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -1983,24 +2421,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteFacility(facility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteFacility(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteFacility(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteFacility(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteFacility(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteFacility(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteFacility(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteFacility(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling deleteFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2014,20 +2456,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/deleteFacility`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2042,24 +2493,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public deleteFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public deleteFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public deleteFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public deleteFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public deleteFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public deleteFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public deleteFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public deleteFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling deleteFacilityByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2073,20 +2528,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/deleteFacility/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2100,16 +2564,19 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllContactGroupNames(observe?: 'body', reportProgress?: boolean): Observable<Array<string>>;
-    public getAllContactGroupNames(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<string>>>;
-    public getAllContactGroupNames(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<string>>>;
-    public getAllContactGroupNames(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllContactGroupNames(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<string>>;
+    public getAllContactGroupNames(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<string>>>;
+    public getAllContactGroupNames(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<string>>>;
+    public getAllContactGroupNames(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2123,18 +2590,27 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<string>>(`${this.configuration.basePath}/json/facilitiesManager/getAllContactGroupNames`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2148,16 +2624,19 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllFacilities(observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getAllFacilities(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getAllFacilities(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getAllFacilities(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllFacilities(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getAllFacilities(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getAllFacilities(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getAllFacilities(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2171,18 +2650,27 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilities`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2199,30 +2687,36 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Group>>;
-    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Group>>>;
-    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Group>>>;
-    public getAllowedGroups(facility: number, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Group>>;
+    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Group>>>;
+    public getAllowedGroups(facility: number, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Group>>>;
+    public getAllowedGroups(facility: number, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedGroups.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2236,19 +2730,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Group>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedGroups`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2265,30 +2768,36 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Group>>;
-    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Group>>>;
-    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Group>>>;
-    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Group>>;
+    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Group>>>;
+    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Group>>>;
+    public getAllowedGroupsByFacilityName(facility: string, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedGroupsByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2302,19 +2811,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Group>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedGroups/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2332,10 +2850,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<RichGroup>>;
-    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<RichGroup>>>;
-    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<RichGroup>>>;
-    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<RichGroup>>;
+    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<RichGroup>>>;
+    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<RichGroup>>>;
+    public getAllowedRichGroupsWithAttributes(facility: number, attrNames: Array<string>, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedRichGroupsWithAttributes.');
         }
@@ -2345,25 +2863,32 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (attrNames) {
             attrNames.forEach((element) => {
-                queryParameters = queryParameters.append('attrNames[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'attrNames[]');
             })
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2377,19 +2902,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<RichGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedRichGroupsWithAttributes`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2407,10 +2941,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<RichGroup>>;
-    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<RichGroup>>>;
-    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<RichGroup>>>;
-    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<RichGroup>>;
+    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<RichGroup>>>;
+    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<RichGroup>>>;
+    public getAllowedRichGroupsWithAttributesByFacilityName(facility: string, attrNames: Array<string>, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedRichGroupsWithAttributesByFacilityName.');
         }
@@ -2420,25 +2954,32 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (attrNames) {
             attrNames.forEach((element) => {
-                queryParameters = queryParameters.append('attrNames[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'attrNames[]');
             })
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2452,19 +2993,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<RichGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedRichGroupsWithAttributes/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2481,30 +3031,36 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getAllowedUsersOfFacility(facility: number, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedUsersOfFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2518,19 +3074,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedUsers/v-f-s`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2547,30 +3112,36 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getAllowedUsersOfFacilityByFacilityName(facility: string, vo?: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedUsersOfFacilityByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (vo !== undefined && vo !== null) {
-            queryParameters = queryParameters.set('vo', <any>vo);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>vo, 'vo');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2584,19 +3155,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAllowedUsers/v-f-s/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2611,24 +3191,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedVos(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Vo>>;
-    public getAllowedVos(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Vo>>>;
-    public getAllowedVos(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Vo>>>;
-    public getAllowedVos(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedVos(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Vo>>;
+    public getAllowedVos(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Vo>>>;
+    public getAllowedVos(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Vo>>>;
+    public getAllowedVos(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedVos.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2642,20 +3226,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Vo>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/getAllowedVos`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2670,24 +3263,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAllowedVosByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Vo>>;
-    public getAllowedVosByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Vo>>>;
-    public getAllowedVosByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Vo>>>;
-    public getAllowedVosByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAllowedVosByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Vo>>;
+    public getAllowedVosByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Vo>>>;
+    public getAllowedVosByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Vo>>>;
+    public getAllowedVosByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAllowedVosByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2701,20 +3298,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Array<Vo>>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/getAllowedVos/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2729,24 +3335,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedFacilitiesByGroup(group: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getAssignedFacilitiesByGroup(group: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getAssignedFacilitiesByGroup(group: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getAssignedFacilitiesByGroup(group: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedFacilitiesByGroup(group: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getAssignedFacilitiesByGroup(group: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getAssignedFacilitiesByGroup(group: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getAssignedFacilitiesByGroup(group: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (group === null || group === undefined) {
             throw new Error('Required parameter group was null or undefined when calling getAssignedFacilitiesByGroup.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (group !== undefined && group !== null) {
-            queryParameters = queryParameters.set('group', <any>group);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>group, 'group');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2760,19 +3370,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedFacilities/group`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2787,24 +3406,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedFacilitiesByMember(member: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getAssignedFacilitiesByMember(member: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getAssignedFacilitiesByMember(member: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getAssignedFacilitiesByMember(member: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedFacilitiesByMember(member: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getAssignedFacilitiesByMember(member: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getAssignedFacilitiesByMember(member: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getAssignedFacilitiesByMember(member: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (member === null || member === undefined) {
             throw new Error('Required parameter member was null or undefined when calling getAssignedFacilitiesByMember.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (member !== undefined && member !== null) {
-            queryParameters = queryParameters.set('member', <any>member);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>member, 'member');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2818,19 +3441,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedFacilities/member`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2845,24 +3477,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedFacilitiesByService(service: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getAssignedFacilitiesByService(service: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getAssignedFacilitiesByService(service: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getAssignedFacilitiesByService(service: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedFacilitiesByService(service: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getAssignedFacilitiesByService(service: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getAssignedFacilitiesByService(service: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getAssignedFacilitiesByService(service: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (service === null || service === undefined) {
             throw new Error('Required parameter service was null or undefined when calling getAssignedFacilitiesByService.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2876,19 +3512,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedFacilities/service`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2903,24 +3548,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedFacilitiesByUser(user: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getAssignedFacilitiesByUser(user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getAssignedFacilitiesByUser(user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getAssignedFacilitiesByUser(user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedFacilitiesByUser(user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getAssignedFacilitiesByUser(user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getAssignedFacilitiesByUser(user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getAssignedFacilitiesByUser(user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling getAssignedFacilitiesByUser.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2934,19 +3583,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedFacilities/user`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -2961,24 +3619,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedResourcesForFacility(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Resource>>;
-    public getAssignedResourcesForFacility(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Resource>>>;
-    public getAssignedResourcesForFacility(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Resource>>>;
-    public getAssignedResourcesForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedResourcesForFacility(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Resource>>;
+    public getAssignedResourcesForFacility(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Resource>>>;
+    public getAssignedResourcesForFacility(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Resource>>>;
+    public getAssignedResourcesForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedResourcesForFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -2992,19 +3654,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Resource>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedResources`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3019,24 +3690,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Resource>>;
-    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Resource>>>;
-    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Resource>>>;
-    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Resource>>;
+    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Resource>>>;
+    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Resource>>>;
+    public getAssignedResourcesForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedResourcesForFacilityByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3050,19 +3725,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Resource>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedResources/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3077,24 +3761,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedRichResourcesForFacility(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<RichResource>>;
-    public getAssignedRichResourcesForFacility(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<RichResource>>>;
-    public getAssignedRichResourcesForFacility(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<RichResource>>>;
-    public getAssignedRichResourcesForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedRichResourcesForFacility(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<RichResource>>;
+    public getAssignedRichResourcesForFacility(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<RichResource>>>;
+    public getAssignedRichResourcesForFacility(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<RichResource>>>;
+    public getAssignedRichResourcesForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedRichResourcesForFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3108,19 +3796,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<RichResource>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedRichResources`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3135,24 +3832,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<RichResource>>;
-    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<RichResource>>>;
-    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<RichResource>>>;
-    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<RichResource>>;
+    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<RichResource>>>;
+    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<RichResource>>>;
+    public getAssignedRichResourcesForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedRichResourcesForFacilityByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3166,19 +3867,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<RichResource>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedRichResources/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3193,24 +3903,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedSecurityTeams(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<SecurityTeam>>;
-    public getAssignedSecurityTeams(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<SecurityTeam>>>;
-    public getAssignedSecurityTeams(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<SecurityTeam>>>;
-    public getAssignedSecurityTeams(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedSecurityTeams(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<SecurityTeam>>;
+    public getAssignedSecurityTeams(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<SecurityTeam>>>;
+    public getAssignedSecurityTeams(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<SecurityTeam>>>;
+    public getAssignedSecurityTeams(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedSecurityTeams.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3224,19 +3938,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<SecurityTeam>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedSecurityTeams`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3251,24 +3974,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<SecurityTeam>>;
-    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<SecurityTeam>>>;
-    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<SecurityTeam>>>;
-    public getAssignedSecurityTeamsByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<SecurityTeam>>;
+    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<SecurityTeam>>>;
+    public getAssignedSecurityTeamsByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<SecurityTeam>>>;
+    public getAssignedSecurityTeamsByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedSecurityTeamsByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3282,19 +4009,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<SecurityTeam>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedSecurityTeams/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3310,27 +4046,32 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedUsers(facility: number, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getAssignedUsers(facility: number, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getAssignedUsers(facility: number, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getAssignedUsers(facility: number, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedUsers(facility: number, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getAssignedUsers(facility: number, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getAssignedUsers(facility: number, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getAssignedUsers(facility: number, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedUsers.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3344,19 +4085,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedUsers`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3372,27 +4122,32 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getAssignedUsersByFacilityName(facility: string, service?: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getAssignedUsersByFacilityName(facility: string, service?: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getAssignedUsersByFacilityName(facility: string, service?: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getAssignedUsersByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (service !== undefined && service !== null) {
-            queryParameters = queryParameters.set('service', <any>service);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>service, 'service');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3406,19 +4161,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAssignedUsers/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3433,24 +4197,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getBansForFacility(facilityId: number, observe?: 'body', reportProgress?: boolean): Observable<Array<BanOnFacility>>;
-    public getBansForFacility(facilityId: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<BanOnFacility>>>;
-    public getBansForFacility(facilityId: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<BanOnFacility>>>;
-    public getBansForFacility(facilityId: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getBansForFacility(facilityId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<BanOnFacility>>;
+    public getBansForFacility(facilityId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<BanOnFacility>>>;
+    public getBansForFacility(facilityId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<BanOnFacility>>>;
+    public getBansForFacility(facilityId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facilityId === null || facilityId === undefined) {
             throw new Error('Required parameter facilityId was null or undefined when calling getBansForFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facilityId !== undefined && facilityId !== null) {
-            queryParameters = queryParameters.set('facilityId', <any>facilityId);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facilityId, 'facilityId');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3464,19 +4232,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<BanOnFacility>>(`${this.configuration.basePath}/json/facilitiesManager/getBansForFacility`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3491,24 +4268,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getBansForUser(user: number, observe?: 'body', reportProgress?: boolean): Observable<Array<BanOnFacility>>;
-    public getBansForUser(user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<BanOnFacility>>>;
-    public getBansForUser(user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<BanOnFacility>>>;
-    public getBansForUser(user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getBansForUser(user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<BanOnFacility>>;
+    public getBansForUser(user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<BanOnFacility>>>;
+    public getBansForUser(user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<BanOnFacility>>>;
+    public getBansForUser(user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling getBansForUser.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3522,19 +4303,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<BanOnFacility>>(`${this.configuration.basePath}/json/facilitiesManager/getBansForUser`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3550,10 +4340,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'body', reportProgress?: boolean): Observable<Array<EnrichedHost>>;
-    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<EnrichedHost>>>;
-    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<EnrichedHost>>>;
-    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<EnrichedHost>>;
+    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<EnrichedHost>>>;
+    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<EnrichedHost>>>;
+    public getEnrichedHosts(facility: number, attrNames: Array<string>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getEnrichedHosts.');
         }
@@ -3563,19 +4353,24 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (attrNames) {
             attrNames.forEach((element) => {
-                queryParameters = queryParameters.append('attrNames[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'attrNames[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3589,19 +4384,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<EnrichedHost>>(`${this.configuration.basePath}/json/facilitiesManager/getEnrichedHosts`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3618,10 +4422,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getFacilitiesByAttribute(attributeName: string, attributeValue: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (attributeName === null || attributeName === undefined) {
             throw new Error('Required parameter attributeName was null or undefined when calling getFacilitiesByAttribute.');
         }
@@ -3631,17 +4435,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (attributeName !== undefined && attributeName !== null) {
-            queryParameters = queryParameters.set('attributeName', <any>attributeName);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>attributeName, 'attributeName');
         }
         if (attributeValue !== undefined && attributeValue !== null) {
-            queryParameters = queryParameters.set('attributeValue', <any>attributeValue);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>attributeValue, 'attributeValue');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3655,19 +4464,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilitiesByAttribute`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3682,24 +4500,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilitiesByDestination(destination: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getFacilitiesByDestination(destination: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getFacilitiesByDestination(destination: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getFacilitiesByDestination(destination: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilitiesByDestination(destination: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getFacilitiesByDestination(destination: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getFacilitiesByDestination(destination: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getFacilitiesByDestination(destination: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (destination === null || destination === undefined) {
             throw new Error('Required parameter destination was null or undefined when calling getFacilitiesByDestination.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (destination !== undefined && destination !== null) {
-            queryParameters = queryParameters.set('destination', <any>destination);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>destination, 'destination');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3713,19 +4535,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilitiesByDestination`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3740,24 +4571,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilitiesByHostName(hostname: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getFacilitiesByHostName(hostname: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getFacilitiesByHostName(hostname: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getFacilitiesByHostName(hostname: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilitiesByHostName(hostname: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getFacilitiesByHostName(hostname: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getFacilitiesByHostName(hostname: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getFacilitiesByHostName(hostname: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (hostname === null || hostname === undefined) {
             throw new Error('Required parameter hostname was null or undefined when calling getFacilitiesByHostName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (hostname !== undefined && hostname !== null) {
-            queryParameters = queryParameters.set('hostname', <any>hostname);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>hostname, 'hostname');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3771,19 +4606,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilitiesByHostName`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3797,16 +4641,19 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilitiesCount(observe?: 'body', reportProgress?: boolean): Observable<number>;
-    public getFacilitiesCount(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<number>>;
-    public getFacilitiesCount(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<number>>;
-    public getFacilitiesCount(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilitiesCount(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<number>;
+    public getFacilitiesCount(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<number>>;
+    public getFacilitiesCount(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<number>>;
+    public getFacilitiesCount(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3820,18 +4667,27 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<number>(`${this.configuration.basePath}/json/facilitiesManager/getFacilitiesCount`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3846,24 +4702,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getFacilitiesWhereUserIsAdmin(user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getFacilitiesWhereUserIsAdmin(user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getFacilitiesWhereUserIsAdmin(user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling getFacilitiesWhereUserIsAdmin.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3877,19 +4737,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilitiesWhereUserIsAdmin`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3904,24 +4773,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityAdminGroups(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Group>>;
-    public getFacilityAdminGroups(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Group>>>;
-    public getFacilityAdminGroups(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Group>>>;
-    public getFacilityAdminGroups(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityAdminGroups(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Group>>;
+    public getFacilityAdminGroups(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Group>>>;
+    public getFacilityAdminGroups(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Group>>>;
+    public getFacilityAdminGroups(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityAdminGroups.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -3935,19 +4808,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Group>>(`${this.configuration.basePath}/json/facilitiesManager/getAdminGroups`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -3963,10 +4845,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getFacilityAdminUsers(facility: number, onlyDirectAdmins: boolean, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityAdminUsers.');
         }
@@ -3976,17 +4858,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (onlyDirectAdmins !== undefined && onlyDirectAdmins !== null) {
-            queryParameters = queryParameters.set('onlyDirectAdmins', <any>onlyDirectAdmins);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>onlyDirectAdmins, 'onlyDirectAdmins');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4000,19 +4887,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAdmins`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4028,10 +4924,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'body', reportProgress?: boolean): Observable<Array<User>>;
-    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<User>>>;
-    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<User>>>;
-    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<User>>;
+    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<User>>>;
+    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<User>>>;
+    public getFacilityAdminUsersByFacilityName(facility: string, onlyDirectAdmins: boolean, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityAdminUsersByFacilityName.');
         }
@@ -4041,17 +4937,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (onlyDirectAdmins !== undefined && onlyDirectAdmins !== null) {
-            queryParameters = queryParameters.set('onlyDirectAdmins', <any>onlyDirectAdmins);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>onlyDirectAdmins, 'onlyDirectAdmins');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4065,19 +4966,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<User>>(`${this.configuration.basePath}/json/facilitiesManager/getAdmins/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4093,10 +5003,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityBan(user: number, facility: number, observe?: 'body', reportProgress?: boolean): Observable<BanOnFacility>;
-    public getFacilityBan(user: number, facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<BanOnFacility>>;
-    public getFacilityBan(user: number, facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<BanOnFacility>>;
-    public getFacilityBan(user: number, facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityBan(user: number, facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<BanOnFacility>;
+    public getFacilityBan(user: number, facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<BanOnFacility>>;
+    public getFacilityBan(user: number, facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<BanOnFacility>>;
+    public getFacilityBan(user: number, facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling getFacilityBan.');
         }
@@ -4106,17 +5016,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4130,19 +5045,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<BanOnFacility>(`${this.configuration.basePath}/json/facilitiesManager/getBan`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4157,24 +5081,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityBanById(banId: number, observe?: 'body', reportProgress?: boolean): Observable<BanOnFacility>;
-    public getFacilityBanById(banId: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<BanOnFacility>>;
-    public getFacilityBanById(banId: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<BanOnFacility>>;
-    public getFacilityBanById(banId: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityBanById(banId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<BanOnFacility>;
+    public getFacilityBanById(banId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<BanOnFacility>>;
+    public getFacilityBanById(banId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<BanOnFacility>>;
+    public getFacilityBanById(banId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (banId === null || banId === undefined) {
             throw new Error('Required parameter banId was null or undefined when calling getFacilityBanById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (banId !== undefined && banId !== null) {
-            queryParameters = queryParameters.set('banId', <any>banId);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>banId, 'banId');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4188,19 +5116,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<BanOnFacility>(`${this.configuration.basePath}/json/facilitiesManager/getBanById`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4215,24 +5152,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityById(id: number, observe?: 'body', reportProgress?: boolean): Observable<Facility>;
-    public getFacilityById(id: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Facility>>;
-    public getFacilityById(id: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Facility>>;
-    public getFacilityById(id: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityById(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Facility>;
+    public getFacilityById(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Facility>>;
+    public getFacilityById(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Facility>>;
+    public getFacilityById(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling getFacilityById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (id !== undefined && id !== null) {
-            queryParameters = queryParameters.set('id', <any>id);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>id, 'id');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4246,19 +5187,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Facility>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityById`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4273,24 +5223,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityByName(name: string, observe?: 'body', reportProgress?: boolean): Observable<Facility>;
-    public getFacilityByName(name: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Facility>>;
-    public getFacilityByName(name: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Facility>>;
-    public getFacilityByName(name: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityByName(name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Facility>;
+    public getFacilityByName(name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Facility>>;
+    public getFacilityByName(name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Facility>>;
+    public getFacilityByName(name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (name === null || name === undefined) {
             throw new Error('Required parameter name was null or undefined when calling getFacilityByName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (name !== undefined && name !== null) {
-            queryParameters = queryParameters.set('name', <any>name);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>name, 'name');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4304,19 +5258,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Facility>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityByName`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4332,10 +5295,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroup(facility: number, name: string, observe?: 'body', reportProgress?: boolean): Observable<ContactGroup>;
-    public getFacilityContactGroup(facility: number, name: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<ContactGroup>>;
-    public getFacilityContactGroup(facility: number, name: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<ContactGroup>>;
-    public getFacilityContactGroup(facility: number, name: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroup(facility: number, name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<ContactGroup>;
+    public getFacilityContactGroup(facility: number, name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<ContactGroup>>;
+    public getFacilityContactGroup(facility: number, name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<ContactGroup>>;
+    public getFacilityContactGroup(facility: number, name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityContactGroup.');
         }
@@ -4345,17 +5308,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (name !== undefined && name !== null) {
-            queryParameters = queryParameters.set('name', <any>name);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>name, 'name');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4369,19 +5337,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<ContactGroup>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroup`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4397,10 +5374,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'body', reportProgress?: boolean): Observable<ContactGroup>;
-    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<ContactGroup>>;
-    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<ContactGroup>>;
-    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<ContactGroup>;
+    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<ContactGroup>>;
+    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<ContactGroup>>;
+    public getFacilityContactGroupByFacilityName(facility: string, name: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityContactGroupByFacilityName.');
         }
@@ -4410,17 +5387,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (name !== undefined && name !== null) {
-            queryParameters = queryParameters.set('name', <any>name);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>name, 'name');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4434,19 +5416,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<ContactGroup>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroup/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4461,24 +5452,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupsForFacility(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ContactGroup>>;
-    public getFacilityContactGroupsForFacility(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForFacility(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupsForFacility(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ContactGroup>>;
+    public getFacilityContactGroupsForFacility(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForFacility(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForFacility(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityContactGroupsForFacility.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4492,19 +5487,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ContactGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroups/facility`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4519,24 +5523,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<ContactGroup>>;
-    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ContactGroup>>;
+    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForFacilityByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityContactGroupsForFacilityByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4550,19 +5558,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ContactGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroups/facility/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4577,24 +5594,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupsForGroup(group: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ContactGroup>>;
-    public getFacilityContactGroupsForGroup(group: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForGroup(group: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForGroup(group: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupsForGroup(group: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ContactGroup>>;
+    public getFacilityContactGroupsForGroup(group: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForGroup(group: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForGroup(group: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (group === null || group === undefined) {
             throw new Error('Required parameter group was null or undefined when calling getFacilityContactGroupsForGroup.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (group !== undefined && group !== null) {
-            queryParameters = queryParameters.set('group', <any>group);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>group, 'group');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4608,19 +5629,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ContactGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroups/group`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4635,24 +5665,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupsForOwner(owner: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ContactGroup>>;
-    public getFacilityContactGroupsForOwner(owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForOwner(owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForOwner(owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupsForOwner(owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ContactGroup>>;
+    public getFacilityContactGroupsForOwner(owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForOwner(owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForOwner(owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (owner === null || owner === undefined) {
             throw new Error('Required parameter owner was null or undefined when calling getFacilityContactGroupsForOwner.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4666,19 +5700,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ContactGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroups/owner`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4693,24 +5736,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityContactGroupsForUser(user: number, observe?: 'body', reportProgress?: boolean): Observable<Array<ContactGroup>>;
-    public getFacilityContactGroupsForUser(user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForUser(user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<ContactGroup>>>;
-    public getFacilityContactGroupsForUser(user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityContactGroupsForUser(user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<ContactGroup>>;
+    public getFacilityContactGroupsForUser(user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForUser(user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<ContactGroup>>>;
+    public getFacilityContactGroupsForUser(user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling getFacilityContactGroupsForUser.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4724,19 +5771,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<ContactGroup>>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityContactGroups/user`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4751,24 +5807,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityForHost(host: number, observe?: 'body', reportProgress?: boolean): Observable<Facility>;
-    public getFacilityForHost(host: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Facility>>;
-    public getFacilityForHost(host: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Facility>>;
-    public getFacilityForHost(host: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityForHost(host: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Facility>;
+    public getFacilityForHost(host: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Facility>>;
+    public getFacilityForHost(host: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Facility>>;
+    public getFacilityForHost(host: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (host === null || host === undefined) {
             throw new Error('Required parameter host was null or undefined when calling getFacilityForHost.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (host !== undefined && host !== null) {
-            queryParameters = queryParameters.set('host', <any>host);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>host, 'host');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4782,19 +5842,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Facility>(`${this.configuration.basePath}/json/facilitiesManager/getFacilityForHost`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4809,24 +5878,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityOwners(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Owner>>;
-    public getFacilityOwners(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Owner>>>;
-    public getFacilityOwners(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Owner>>>;
-    public getFacilityOwners(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityOwners(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Owner>>;
+    public getFacilityOwners(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Owner>>>;
+    public getFacilityOwners(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Owner>>>;
+    public getFacilityOwners(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityOwners.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4840,19 +5913,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Owner>>(`${this.configuration.basePath}/json/facilitiesManager/getOwners`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4867,24 +5949,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getFacilityOwnersByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Owner>>;
-    public getFacilityOwnersByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Owner>>>;
-    public getFacilityOwnersByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Owner>>>;
-    public getFacilityOwnersByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getFacilityOwnersByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Owner>>;
+    public getFacilityOwnersByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Owner>>>;
+    public getFacilityOwnersByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Owner>>>;
+    public getFacilityOwnersByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getFacilityOwnersByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4898,19 +5984,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Owner>>(`${this.configuration.basePath}/json/facilitiesManager/getOwners/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4925,24 +6020,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHostById(id: number, observe?: 'body', reportProgress?: boolean): Observable<Host>;
-    public getHostById(id: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Host>>;
-    public getHostById(id: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Host>>;
-    public getHostById(id: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHostById(id: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Host>;
+    public getHostById(id: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Host>>;
+    public getHostById(id: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Host>>;
+    public getHostById(id: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling getHostById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (id !== undefined && id !== null) {
-            queryParameters = queryParameters.set('id', <any>id);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>id, 'id');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -4956,19 +6055,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Host>(`${this.configuration.basePath}/json/facilitiesManager/getHostById`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -4983,24 +6091,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHosts(facility: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public getHosts(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public getHosts(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public getHosts(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHosts(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public getHosts(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public getHosts(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public getHosts(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getHosts.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5014,19 +6126,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Host>>(`${this.configuration.basePath}/json/facilitiesManager/getHosts`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5041,24 +6162,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHostsByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<Array<Host>>;
-    public getHostsByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Host>>>;
-    public getHostsByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Host>>>;
-    public getHostsByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHostsByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Host>>;
+    public getHostsByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Host>>>;
+    public getHostsByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Host>>>;
+    public getHostsByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getHostsByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5072,19 +6197,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Host>>(`${this.configuration.basePath}/json/facilitiesManager/getHosts/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5099,24 +6233,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHostsByHostname(hostname: string, observe?: 'body', reportProgress?: boolean): Observable<Host>;
-    public getHostsByHostname(hostname: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Host>>;
-    public getHostsByHostname(hostname: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Host>>;
-    public getHostsByHostname(hostname: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHostsByHostname(hostname: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Host>;
+    public getHostsByHostname(hostname: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Host>>;
+    public getHostsByHostname(hostname: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Host>>;
+    public getHostsByHostname(hostname: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (hostname === null || hostname === undefined) {
             throw new Error('Required parameter hostname was null or undefined when calling getHostsByHostname.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (hostname !== undefined && hostname !== null) {
-            queryParameters = queryParameters.set('hostname', <any>hostname);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>hostname, 'hostname');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5130,19 +6268,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Host>(`${this.configuration.basePath}/json/facilitiesManager/getHostsByHostname`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5157,24 +6304,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHostsCount(facility: number, observe?: 'body', reportProgress?: boolean): Observable<number>;
-    public getHostsCount(facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<number>>;
-    public getHostsCount(facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<number>>;
-    public getHostsCount(facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHostsCount(facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<number>;
+    public getHostsCount(facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<number>>;
+    public getHostsCount(facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<number>>;
+    public getHostsCount(facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getHostsCount.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5188,19 +6339,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<number>(`${this.configuration.basePath}/json/facilitiesManager/getHostsCount`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5215,24 +6375,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getHostsCountByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean): Observable<number>;
-    public getHostsCountByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<number>>;
-    public getHostsCountByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<number>>;
-    public getHostsCountByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getHostsCountByFacilityName(facility: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<number>;
+    public getHostsCountByFacilityName(facility: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<number>>;
+    public getHostsCountByFacilityName(facility: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<number>>;
+    public getHostsCountByFacilityName(facility: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling getHostsCountByFacilityName.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5246,19 +6410,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<number>(`${this.configuration.basePath}/json/facilitiesManager/getHostsCount/f-name`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5273,24 +6446,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getOwnerFacilities(owner: number, observe?: 'body', reportProgress?: boolean): Observable<Array<Facility>>;
-    public getOwnerFacilities(owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<Facility>>>;
-    public getOwnerFacilities(owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<Facility>>>;
-    public getOwnerFacilities(owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getOwnerFacilities(owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<Facility>>;
+    public getOwnerFacilities(owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<Facility>>>;
+    public getOwnerFacilities(owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<Facility>>>;
+    public getOwnerFacilities(owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (owner === null || owner === undefined) {
             throw new Error('Required parameter owner was null or undefined when calling getOwnerFacilities.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5304,19 +6481,28 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<Facility>>(`${this.configuration.basePath}/json/facilitiesManager/getOwnerFacilities`,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5330,16 +6516,19 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getRichFacilities(observe?: 'body', reportProgress?: boolean): Observable<Array<RichFacility>>;
-    public getRichFacilities(observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Array<RichFacility>>>;
-    public getRichFacilities(observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Array<RichFacility>>>;
-    public getRichFacilities(observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public getRichFacilities(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Array<RichFacility>>;
+    public getRichFacilities(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Array<RichFacility>>>;
+    public getRichFacilities(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Array<RichFacility>>>;
+    public getRichFacilities(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5353,18 +6542,27 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.get<Array<RichFacility>>(`${this.configuration.basePath}/json/facilitiesManager/getRichFacilities`,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5380,10 +6578,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeBanByUserIdFacilityId(user: number, facility: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeBanByUserIdFacilityId(user: number, facility: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeBanByUserIdFacilityId(user: number, facility: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (user === null || user === undefined) {
             throw new Error('Required parameter user was null or undefined when calling removeBanByUserIdFacilityId.');
         }
@@ -5393,17 +6591,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5417,20 +6620,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeBan/byUserIdFacilityId`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5446,10 +6658,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityAdminGroup(facility: number, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityAdminGroup.');
         }
@@ -5459,17 +6671,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (authorizedGroup !== undefined && authorizedGroup !== null) {
-            queryParameters = queryParameters.set('authorizedGroup', <any>authorizedGroup);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>authorizedGroup, 'authorizedGroup');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5483,20 +6700,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeAdmin/group`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5512,10 +6738,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityAdminGroupByFacilityName(facility: string, authorizedGroup: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityAdminGroupByFacilityName.');
         }
@@ -5525,17 +6751,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (authorizedGroup !== undefined && authorizedGroup !== null) {
-            queryParameters = queryParameters.set('authorizedGroup', <any>authorizedGroup);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>authorizedGroup, 'authorizedGroup');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5549,20 +6780,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeAdmin/group/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5578,10 +6818,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityAdminUser(facility: number, user: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityAdminUser(facility: number, user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityAdminUser(facility: number, user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityAdminUser(facility: number, user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityAdminUser(facility: number, user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityAdminUser(facility: number, user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityAdminUser(facility: number, user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityAdminUser(facility: number, user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityAdminUser.');
         }
@@ -5591,17 +6831,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5615,20 +6860,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeAdmin/user`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5644,10 +6898,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityAdminUserByFacilityName(facility: string, user: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityAdminUserByFacilityName.');
         }
@@ -5657,17 +6911,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (user !== undefined && user !== null) {
-            queryParameters = queryParameters.set('user', <any>user);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>user, 'user');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5681,20 +6940,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeAdmin/user/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5709,24 +6977,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityBanById(banId: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityBanById(banId: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityBanById(banId: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityBanById(banId: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityBanById(banId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityBanById(banId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityBanById(banId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityBanById(banId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (banId === null || banId === undefined) {
             throw new Error('Required parameter banId was null or undefined when calling removeFacilityBanById.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (banId !== undefined && banId !== null) {
-            queryParameters = queryParameters.set('banId', <any>banId);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>banId, 'banId');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5740,20 +7012,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeBan/byId`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5768,10 +7049,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityContact(inputRemoveFacilityContact: InputRemoveFacilityContact, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputRemoveFacilityContact === null || inputRemoveFacilityContact === undefined) {
             throw new Error('Required parameter inputRemoveFacilityContact was null or undefined when calling removeFacilityContact.');
         }
@@ -5779,8 +7060,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5794,11 +7078,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -5813,9 +7100,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/facilitiesManager/removeFacilityContact`,
             inputRemoveFacilityContact,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5830,10 +7123,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityContacts(inputRemoveFacilityContacts: InputRemoveFacilityContacts, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputRemoveFacilityContacts === null || inputRemoveFacilityContacts === undefined) {
             throw new Error('Required parameter inputRemoveFacilityContacts was null or undefined when calling removeFacilityContacts.');
         }
@@ -5841,8 +7134,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5856,11 +7152,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -5875,9 +7174,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/json/facilitiesManager/removeFacilityContacts`,
             inputRemoveFacilityContacts,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5893,10 +7198,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityOwner(facility: number, owner: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityOwner(facility: number, owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityOwner(facility: number, owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityOwner(facility: number, owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityOwner(facility: number, owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityOwner(facility: number, owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityOwner(facility: number, owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityOwner(facility: number, owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityOwner.');
         }
@@ -5906,17 +7211,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5930,20 +7240,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeOwner`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -5959,10 +7278,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityOwnerByFacilityName(facility: string, owner: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityOwnerByFacilityName.');
         }
@@ -5972,17 +7291,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -5996,20 +7320,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeOwner/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6025,10 +7358,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityOwnerByFacilityNameOwnerName(facility: string, owner: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityOwnerByFacilityNameOwnerName.');
         }
@@ -6038,17 +7371,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6062,20 +7400,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeOwner/f-o-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6091,10 +7438,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeFacilityOwnerByOwnerName(facility: number, owner: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeFacilityOwnerByOwnerName.');
         }
@@ -6104,17 +7451,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (owner !== undefined && owner !== null) {
-            queryParameters = queryParameters.set('owner', <any>owner);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>owner, 'owner');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6128,20 +7480,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeOwner/o-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6156,24 +7517,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeHost(host: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeHost(host: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeHost(host: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeHost(host: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeHost(host: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeHost(host: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeHost(host: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeHost(host: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (host === null || host === undefined) {
             throw new Error('Required parameter host was null or undefined when calling removeHost.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (host !== undefined && host !== null) {
-            queryParameters = queryParameters.set('host', <any>host);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>host, 'host');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6187,20 +7552,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeHost`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6215,24 +7589,28 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeHostByHostname(hostname: string, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeHostByHostname(hostname: string, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeHostByHostname(hostname: string, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeHostByHostname(hostname: string, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeHostByHostname(hostname: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeHostByHostname(hostname: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeHostByHostname(hostname: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeHostByHostname(hostname: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (hostname === null || hostname === undefined) {
             throw new Error('Required parameter hostname was null or undefined when calling removeHostByHostname.');
         }
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (hostname !== undefined && hostname !== null) {
-            queryParameters = queryParameters.set('hostname', <any>hostname);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>hostname, 'hostname');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6246,20 +7624,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeHostByHostname`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6275,10 +7662,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeHosts(facility: number, hosts: Array<number>, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeHosts(facility: number, hosts: Array<number>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeHosts(facility: number, hosts: Array<number>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeHosts(facility: number, hosts: Array<number>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeHosts(facility: number, hosts: Array<number>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeHosts(facility: number, hosts: Array<number>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeHosts(facility: number, hosts: Array<number>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeHosts(facility: number, hosts: Array<number>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeHosts.');
         }
@@ -6288,19 +7675,24 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hosts) {
             hosts.forEach((element) => {
-                queryParameters = queryParameters.append('hosts[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'hosts[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6314,20 +7706,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeHosts`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6343,10 +7744,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeHostsByFacilityName(facility: string, hosts: Array<number>, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeHostsByFacilityName.');
         }
@@ -6356,19 +7757,24 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (hosts) {
             hosts.forEach((element) => {
-                queryParameters = queryParameters.append('hosts[]', <any>element);
+                queryParameters = this.addToHttpParams(queryParameters,
+                  <any>element, 'hosts[]');
             })
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6382,20 +7788,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeHosts/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6411,10 +7826,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeSecurityTeam(facility: number, securityTeam: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeSecurityTeam(facility: number, securityTeam: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeSecurityTeam(facility: number, securityTeam: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeSecurityTeam.');
         }
@@ -6424,17 +7839,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (securityTeam !== undefined && securityTeam !== null) {
-            queryParameters = queryParameters.set('securityTeam', <any>securityTeam);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>securityTeam, 'securityTeam');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6448,20 +7868,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeSecurityTeam`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6477,10 +7906,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'body', reportProgress?: boolean): Observable<any>;
-    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<any>>;
-    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<any>>;
-    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<any>;
+    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<any>>;
+    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<any>>;
+    public removeSecurityTeamByFacilityName(facility: string, securityTeam: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (facility === null || facility === undefined) {
             throw new Error('Required parameter facility was null or undefined when calling removeSecurityTeamByFacilityName.');
         }
@@ -6490,17 +7919,22 @@ export class FacilitiesManagerService {
 
         let queryParameters = new HttpParams({encoder: this.encoder});
         if (facility !== undefined && facility !== null) {
-            queryParameters = queryParameters.set('facility', <any>facility);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>facility, 'facility');
         }
         if (securityTeam !== undefined && securityTeam !== null) {
-            queryParameters = queryParameters.set('securityTeam', <any>securityTeam);
+          queryParameters = this.addToHttpParams(queryParameters,
+            <any>securityTeam, 'securityTeam');
         }
 
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6514,20 +7948,29 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
 
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<any>(`${this.configuration.basePath}/urlinjsonout/facilitiesManager/removeSecurityTeam/f-name`,
             null,
             {
                 params: queryParameters,
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6542,10 +7985,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'body', reportProgress?: boolean): Observable<BanOnFacility>;
-    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<BanOnFacility>>;
-    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<BanOnFacility>>;
-    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<BanOnFacility>;
+    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<BanOnFacility>>;
+    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<BanOnFacility>>;
+    public setFacilityBan(inputSetBanForUserOnFacility: InputSetBanForUserOnFacility, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputSetBanForUserOnFacility === null || inputSetBanForUserOnFacility === undefined) {
             throw new Error('Required parameter inputSetBanForUserOnFacility was null or undefined when calling setFacilityBan.');
         }
@@ -6553,8 +7996,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6568,11 +8014,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -6587,9 +8036,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<BanOnFacility>(`${this.configuration.basePath}/json/facilitiesManager/setBan`,
             inputSetBanForUserOnFacility,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6604,10 +8059,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'body', reportProgress?: boolean): Observable<Facility>;
-    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<Facility>>;
-    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<Facility>>;
-    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<Facility>;
+    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<Facility>>;
+    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<Facility>>;
+    public updateFacility(inputUpdateFacility: InputUpdateFacility, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputUpdateFacility === null || inputUpdateFacility === undefined) {
             throw new Error('Required parameter inputUpdateFacility was null or undefined when calling updateFacility.');
         }
@@ -6615,8 +8070,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6630,11 +8088,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -6649,9 +8110,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<Facility>(`${this.configuration.basePath}/json/facilitiesManager/updateFacility`,
             inputUpdateFacility,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,
@@ -6666,10 +8133,10 @@ export class FacilitiesManagerService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'body', reportProgress?: boolean): Observable<BanOnFacility>;
-    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'response', reportProgress?: boolean): Observable<HttpResponse<BanOnFacility>>;
-    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'events', reportProgress?: boolean): Observable<HttpEvent<BanOnFacility>>;
-    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe: any = 'body', reportProgress: boolean = false ): Observable<any> {
+    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<BanOnFacility>;
+    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpResponse<BanOnFacility>>;
+    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json'}): Observable<HttpEvent<BanOnFacility>>;
+    public updateFacilityBan(inputUpdateBanForFacility: InputUpdateBanForFacility, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json'}): Observable<any> {
         if (inputUpdateBanForFacility === null || inputUpdateBanForFacility === undefined) {
             throw new Error('Required parameter inputUpdateBanForFacility was null or undefined when calling updateFacilityBan.');
         }
@@ -6677,8 +8144,11 @@ export class FacilitiesManagerService {
         let headers = this.defaultHeaders;
 
         // authentication (ApiKeyAuth) required
-        if (this.configuration.apiKeys && this.configuration.apiKeys["Authorization"]) {
-            headers = headers.set('Authorization', this.configuration.apiKeys["Authorization"]);
+        if (this.configuration.apiKeys) {
+            const key: string | undefined = this.configuration.apiKeys["ApiKeyAuth"] || this.configuration.apiKeys["Authorization"];
+            if (key) {
+                headers = headers.set('Authorization', key);
+            }
         }
 
         // authentication (BasicAuth) required
@@ -6692,11 +8162,14 @@ export class FacilitiesManagerService {
                 : this.configuration.accessToken;
             headers = headers.set('Authorization', 'Bearer ' + accessToken);
         }
-        // to determine the Accept header
-        const httpHeaderAccepts: string[] = [
-            'application/json'
-        ];
-        const httpHeaderAcceptSelected: string | undefined = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
         if (httpHeaderAcceptSelected !== undefined) {
             headers = headers.set('Accept', httpHeaderAcceptSelected);
         }
@@ -6711,9 +8184,15 @@ export class FacilitiesManagerService {
             headers = headers.set('Content-Type', httpContentTypeSelected);
         }
 
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
         return this.httpClient.post<BanOnFacility>(`${this.configuration.basePath}/json/facilitiesManager/updateBan`,
             inputUpdateBanForFacility,
             {
+                responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,
                 headers: headers,
                 observe: observe,

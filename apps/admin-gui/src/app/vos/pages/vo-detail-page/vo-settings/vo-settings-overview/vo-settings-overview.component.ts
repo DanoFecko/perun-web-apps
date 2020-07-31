@@ -1,4 +1,4 @@
-import {Component, HostBinding, OnInit} from '@angular/core';
+ import {Component, HostBinding, OnInit} from '@angular/core';
 import {SideMenuService} from '../../../../../core/services/common/side-menu.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {MenuItem} from '@perun-web-apps/perun/models';
@@ -82,6 +82,15 @@ export class VoSettingsOverviewComponent implements OnInit {
         cssIcon: 'perun-external-sources',
         url: `/organizations/${this.vo.id}/settings/extsources`,
         label: 'MENU_ITEMS.VO.EXTSOURCES',
+        style: 'vo-btn'
+      });
+    }
+    // Sponsored user
+    if (this.authResolver.isAuthorized('getSponsoredMembers_Vo_policy', [this.vo])) {
+      this.items.push({
+        cssIcon: 'perun-user',
+        url: `/organizations/${this.vo.id}/settings/sponsoredUsers`,
+        label: 'MENU_ITEMS.VO.SPONSORED_USERS',
         style: 'vo-btn'
       });
     }

@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Owner } from './owner';
+import { RichFacilityAllOf } from './richFacilityAllOf';
 import { Facility } from './facility';
 
 
