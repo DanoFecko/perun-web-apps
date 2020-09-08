@@ -20,6 +20,7 @@ import {
   parseFullName,
   TABLE_ITEMS_COUNT_OPTIONS
 } from '@perun-web-apps/perun/utils';
+// tslint:disable-next-line:nx-enforce-module-boundaries
 import { ChangeMemberStatusDialogComponent } from '../../../../../../apps/admin-gui/src/app/shared/components/dialogs/change-member-status-dialog/change-member-status-dialog.component';
 
 @Component({

@@ -38,6 +38,15 @@
             [userToBeRemoved]="userToBeRemoved">
         </perun-web-apps-third-group>
       </mat-step>
+
+      <mat-step>
+        <ng-template matStepLabel>External sources</ng-template>
+        <perun-web-apps-fourth-group
+            [userToBeKept]="userToBeKept"
+            [userToBeRemoved]="userToBeRemoved">
+        </perun-web-apps-fourth-group>
+      </mat-step>
+
     </mat-horizontal-stepper>
   </mat-card-content>
   <mat-card-footer>

@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {
   MembersManagerService,
-  RichMember,
   RichUser,
   UsersManagerService
 } from '@perun-web-apps/perun/openapi';

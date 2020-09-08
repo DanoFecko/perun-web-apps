@@ -38,25 +38,29 @@ export class ThirdGroupComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['userToBeRemoved']) {
-      this.membersService.getMembersByUser(this.userToBeRemoved.id).subscribe(members => {
-        this.membersRLength = members.length;
-        for (const m of members) {
-          this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => {
-            this.membersRemoved.push(richMember);
-          });
-        }
-      });
+      if (this.userToBeRemoved) {
+        this.membersService.getMembersByUser(this.userToBeRemoved.id).subscribe(members => {
+          this.membersRLength = members.length;
+          for (const m of members) {
+            this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => {
+              this.membersRemoved.push(richMember);
+            });
+          }
+        });
+      }
     }
 
     if (changes['userToBeKept']) {
-      this.membersService.getMembersByUser(this.userToBeKept.id).subscribe(members => {
-        this.membersKLength = members.length;
-        for (const m of members) {
-          this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => {
-            this.membersKept.push(richMember);
-          });
-        }
-      });
+      if (this.userToBeKept) {
+        this.membersService.getMembersByUser(this.userToBeKept.id).subscribe(members => {
+          this.membersKLength = members.length;
+          for (const m of members) {
+            this.membersService.getRichMemberWithAttributes(m.id).subscribe(richMember => {
+              this.membersKept.push(richMember);
+            });
+          }
+        });
+      }
     }
   }
 
