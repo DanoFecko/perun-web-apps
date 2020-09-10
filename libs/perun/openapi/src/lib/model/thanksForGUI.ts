@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Thanks } from './thanks';
+import { ThanksForGUIAllOf } from './thanksForGUIAllOf';
 
 
 export interface ThanksForGUI extends Thanks { 

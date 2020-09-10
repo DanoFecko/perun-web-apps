@@ -17,7 +17,7 @@ import { PERUN_API_SERVICE } from '@perun-web-apps/perun/tokens';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { MatIconModule } from '@angular/material/icon';
 import { GeneralModule } from '@perun-web-apps/general';
-import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AppRoutingModule } from './app-routing.module';
 import { DeschizConfigService } from './services/deschiz-config.service';
 import { FlexModule } from '@angular/flex-layout';
@@ -99,4 +99,12 @@ const loadConfigs = (appConfig: DeschizConfigService) => {
   bootstrap: [AppComponent]
 })
 export class AppModule {
+  constructor(
+    private customIconService: CustomIconService,
+    private translate: TranslateService
+  ) {
+    this.translate.setDefaultLang('en');
+    this.translate.use('en');
+    this.customIconService.registerPerunRefreshIcon();
+  }
 }

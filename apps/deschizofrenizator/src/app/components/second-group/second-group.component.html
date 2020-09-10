@@ -5,7 +5,7 @@
       <perun-web-apps-attributes-list
           [attributes]="this.userToBeRemoved.userAttributes"
           [selection]="this.selection"
-          [hiddenColumns]="hiddenColumns"
+          [hiddenColumns]="hiddenColumnsR"
           [pageSize]="5">
       </perun-web-apps-attributes-list>
     </mat-card-content>
@@ -16,7 +16,7 @@
       <perun-web-apps-attributes-list
           [pageSize]="5"
           [attributes]="this.userToBeKept.userAttributes"
-          [hiddenColumns]="hiddenColumns">
+          [hiddenColumns]="hiddenColumnsK">
       </perun-web-apps-attributes-list>
     </mat-card-content>
   </mat-card>

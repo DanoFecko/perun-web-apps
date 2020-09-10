@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { PerunBean } from './perunBean';
+import { AuthorshipAllOf } from './authorshipAllOf';
 
 
 export interface Authorship extends PerunBean { 

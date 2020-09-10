@@ -77,7 +77,19 @@ export class ThirdGroupComponent implements OnChanges {
   // }
 
   onTransfer(member: RichMember) {
-    const dialogRef = this.dialog.open(TransferMemberDialogComponent, { data: { memberId: member.id } });
+    const dialogRef = this.dialog.open(TransferMemberDialogComponent, {
+      data: {
+        utk: this.userToBeKept,
+        memberId: member.id,
+        voId: member.voId,
+      }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === '1+') {
+        this.membersKept.push(member);
+        this.membersKLength = this.membersKLength + 1;
+      }
+    });
   }
 
 }

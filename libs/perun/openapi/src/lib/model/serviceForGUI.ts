@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Service } from './service';
+import { ServiceForGUIAllOf } from './serviceForGUIAllOf';
 
 
 export interface ServiceForGUI extends Service { 

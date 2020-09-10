@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Attribute, RichUser } from '@perun-web-apps/perun/openapi';
 import { SelectionModel } from '@angular/cdk/collections';
+import { HomePageComponent } from '../../pages/home-page/home-page.component';
 
 @Component({
   selector: 'perun-web-apps-second-group',
@@ -20,7 +21,8 @@ export class SecondGroupComponent implements OnChanges {
 
   selection = new SelectionModel<Attribute>(true, []);
 
-  hiddenColumns = ['id', 'description'];
+  hiddenColumnsR = ['id', 'description'];
+  hiddenColumnsK = ['select', 'id', 'description'];
 
   ngOnChanges(changes: SimpleChanges): void {
   }
@@ -30,7 +32,9 @@ export class SecondGroupComponent implements OnChanges {
       const tmp = this.userToBeKept.userAttributes.find(obj => obj.id === a.id);
       if (tmp !== undefined) {
         tmp.value = a.value;
+        HomePageComponent.attributesStack.push(tmp);
       } else {
+        HomePageComponent.attributesStack.push(a);
         this.userToBeKept.userAttributes.push(a);
       }
     }

@@ -12,6 +12,7 @@
 import { User } from './user';
 import { Attribute } from './attribute';
 import { UserExtSource } from './userExtSource';
+import { RichMemberAllOf } from './richMemberAllOf';
 import { Member } from './member';
 
 

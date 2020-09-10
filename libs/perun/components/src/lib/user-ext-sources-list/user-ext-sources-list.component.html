@@ -40,6 +40,10 @@
           <th *matHeaderCellDef mat-header-cell>{{'SHARED_LIB.PERUN.COMPONENTS.USER_EXT_SOURCES_LIST.LAST_ACCESS' | customTranslate | translate}}</th>
           <td *matCellDef="let richUserExtSource" mat-cell>{{richUserExtSource.userExtSource.lastAccess | parseLastAccess}}</td>
         </ng-container>
+        <ng-container class="pl-3" matColumnDef="transfer">
+          <th *matHeaderCellDef mat-header-cell>{{'SHARED_LIB.PERUN.COMPONENTS.USER_EXT_SOURCES_LIST.TRANSFER' | customTranslate | translate}}</th>
+          <td *matCellDef="let richUserExtSource" mat-cell><mat-icon class="green-icon" (click)="this.transfer.emit(richUserExtSource)">play_arrow</mat-icon></td>
+        </ng-container>
 
         <tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
         <tr

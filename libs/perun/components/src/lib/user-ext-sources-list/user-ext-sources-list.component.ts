@@ -1,9 +1,18 @@
-import { AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import { RichUserExtSource, UserExtSource } from '@perun-web-apps/perun/openapi';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatTable, MatTableDataSource } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -32,6 +41,11 @@ export class UserExtSourcesListComponent implements AfterViewInit, OnChanges {
   loginHeader: string;
   @Input()
   disableRouting: boolean;
+  @Input()
+  enableTransfer = false;
+
+  @Output()
+  transfer = new EventEmitter<UserExtSource>();
 
   @ViewChild(MatPaginator)
   paginator: MatPaginator;
@@ -43,22 +57,27 @@ export class UserExtSourcesListComponent implements AfterViewInit, OnChanges {
 
   private sort: MatSort;
 
-  displayedColumns: string[] = ['select', 'id', 'mail', 'extSourceName', 'login','loa', 'lastAccess'];
+  displayedColumns: string[] = ['select', 'id', 'mail', 'extSourceName', 'login', 'loa', 'lastAccess'];
+  displayedColumnsWithTransfer: string[] = ['select', 'id', 'mail', 'extSourceName', 'login', 'loa', 'lastAccess', 'transfer'];
   dataSource: MatTableDataSource<RichUserExtSource>;
   exporting = false;
   userId: number;
 
   ngAfterViewInit() {
-    if(!this.disableRouting){
+    if (!this.disableRouting) {
       this.route.parent.params.subscribe(params => {
-        this.userId = params["userId"];
+        this.userId = params['userId'];
       });
     }
     this.setDataSource();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.displayedColumns = this.displayedColumns.filter(x => !this.hideColumns.includes(x));
+    if (this.enableTransfer) {
+      this.displayedColumns = this.displayedColumnsWithTransfer.filter(x => !this.hideColumns.includes(x));
+    } else {
+      this.displayedColumns = this.displayedColumns.filter(x => !this.hideColumns.includes(x));
+    }
     this.dataSource = new MatTableDataSource<RichUserExtSource>(this.userExtSources);
     this.setDataSource();
   }

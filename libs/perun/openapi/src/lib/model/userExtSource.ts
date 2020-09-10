@@ -10,6 +10,7 @@
  * Do not edit the class manually.
  */
 import { Auditable } from './auditable';
+import { UserExtSourceAllOf } from './userExtSourceAllOf';
 import { ExtSource } from './extSource';
 
 

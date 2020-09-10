@@ -1,11 +1,12 @@
 <div class="mt-3" fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="15px">
   <mat-card fxFlex="45" *ngIf="this.userToBeRemoved">
     <mat-card-content>
-      <!--      <button mat-flat-button color="accent" (click)="onTransfer()">Transfer Selected</button>-->
+      <button mat-flat-button color="accent" (click)="onTransfer()">Transfer Selected</button>
       <perun-web-apps-user-ext-sources-list
           [userExtSources]="utrRichUserExtSources"
           [selection]="selection"
-          [hideColumns]="hiddenColumns"
+          [hideColumns]="hiddenColumnsR"
+          [disableRouting]="true"
       ></perun-web-apps-user-ext-sources-list>
     </mat-card-content>
   </mat-card>
@@ -13,9 +14,10 @@
   <mat-card fxFlex="45" *ngIf="this.userToBeKept">
     <mat-card-content class="ml-5">
       <perun-web-apps-user-ext-sources-list
-          [userExtSources]="utkRichUserExtSources"
-          [selection]="selection"
-          [hideColumns]="hiddenColumns"
+        #table
+        [userExtSources]="utkRichUserExtSources"
+        [hideColumns]="hiddenColumnsK"
+        [disableRouting]="true"
       ></perun-web-apps-user-ext-sources-list>
     </mat-card-content>
   </mat-card>

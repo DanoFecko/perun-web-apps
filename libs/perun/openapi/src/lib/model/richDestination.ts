@@ -14,6 +14,7 @@ import { DestinationPropagationType } from './destinationPropagationType';
 import { Service } from './service';
 import { Facility } from './facility';
 import { DestinationType } from './destinationType';
+import { RichDestinationAllOf } from './richDestinationAllOf';
 
 
 export interface RichDestination extends Destination { 
