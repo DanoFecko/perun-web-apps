@@ -126,7 +126,7 @@ export class HomePageComponent implements OnInit {
       this.saveDeleteUser();
     }
   }
-
+//TODO optional
   saveDeleteUser() {
     this.usersService.deleteUser(this.userToBeRemoved.id, true).subscribe(() => {
       this.notificator.showSuccess('Operation successful');

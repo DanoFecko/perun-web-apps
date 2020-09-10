@@ -41,7 +41,7 @@ export class TransferMemberDialogComponent implements OnInit {
 
   displayedColumns: string[] = ['checkbox', 'id', 'name'];
   dataSource: MatTableDataSource<Group> = new MatTableDataSource<Group>();
-  selection: SelectionModel<Group> = new SelectionModel<Group>();
+  selection: SelectionModel<Group> = new SelectionModel<Group>(true, [] );
 
   constructor(private dialogRef: MatDialogRef<TransferMemberDialogComponent>,
               @Inject(MAT_DIALOG_DATA) private data: TransferMemberDialogData,

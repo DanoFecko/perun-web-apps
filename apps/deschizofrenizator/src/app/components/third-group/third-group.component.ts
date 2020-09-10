@@ -31,6 +31,7 @@ export class ThirdGroupComponent implements OnChanges {
 
   selection = new SelectionModel<RichMember>(true, []);
 
+  //TODO show and hide columns
   hiddenColumns = ['id', 'type'];
 
   membersKLength: number;
